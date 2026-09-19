@@ -1243,7 +1243,7 @@ function spawnConfetti(){
         pieces.push({
           x: cx, y: cy, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
           color: colors[i%colors.length], life: 1,
-          decay: 0.005 + Math.random()*0.006,
+          decay: 0.0025 + Math.random()*0.003,
           size: 5 + Math.random()*5,
           rot: Math.random()*Math.PI*2,
           rotSpeed: (Math.random()-0.5)*0.35,
@@ -1259,7 +1259,7 @@ function spawnConfetti(){
   for(let i=0;i<layerCount;i++) burst(shuffled[i], i*120);
 
   const startTime = performance.now();
-  const maxDuration = 4200;
+  const maxDuration = 7000;
 
   function frame(now){
     const t = now - startTime;
