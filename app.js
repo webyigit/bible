@@ -1222,8 +1222,8 @@ function spawnConfetti(){
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
 
-  const GRAVITY = 0.022;
-  const FRICTION = 0.992;
+  const GRAVITY = 0.005;
+  const FRICTION = 0.995;
   const PALETTES = [
     ["#ff6b6b","#ffd166"], ["#4dd4ff","#5e7bff"], ["#d16bff","#ff6bd8"],
     ["#7dff8f","#c8ff5e"], ["#ffe15e","#ff9d5e"], ["#ffffff","#bfe9ff"]
@@ -1239,11 +1239,11 @@ function spawnConfetti(){
       const n = 90 + Math.floor(Math.random()*40);
       for(let i=0;i<n;i++){
         const angle = (Math.PI*2*i)/n + Math.random()*0.3;
-        const speed = (maxDist/125) * (0.45+Math.random()*0.75);
+        const speed = (maxDist/200) * (0.45+Math.random()*0.75);
         pieces.push({
           x: cx, y: cy, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
           color: colors[i%colors.length], life: 1,
-          decay: 0.0025 + Math.random()*0.003,
+          decay: 0.0011 + Math.random()*0.0009,
           size: 5 + Math.random()*5,
           rot: Math.random()*Math.PI*2,
           rotSpeed: (Math.random()-0.5)*0.35,
@@ -1259,7 +1259,7 @@ function spawnConfetti(){
   for(let i=0;i<layerCount;i++) burst(shuffled[i], i*120);
 
   const startTime = performance.now();
-  const maxDuration = 7000;
+  const maxDuration = 16000;
 
   function frame(now){
     const t = now - startTime;
