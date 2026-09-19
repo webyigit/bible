@@ -259,7 +259,8 @@ function renderMeditation(dayIdx, dateISO){
 document.getElementById("meditation-save").addEventListener("click", async ()=>{
   const text = document.getElementById("meditation-note").value;
   await saveMeditationNote(todayISO(), text);
-  setText("meditation-status", text.trim() ? "오늘 묵상노트를 작성했어요" : "");
+  document.getElementById("meditation-note").value = "";
+  setText("meditation-status", text.trim() ? "오늘 묵상노트를 저장했어요 · 북마크 탭 > 🌱 묵상노트에서 볼 수 있어요" : "");
   toast("묵상노트를 저장했습니다");
 });
 
