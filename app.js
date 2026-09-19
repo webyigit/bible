@@ -780,7 +780,11 @@ const BibleAPI = {
   async search(translation, query){
     const cacheKey = `${translation}:${query}`;
     if(this._searchCache.has(cacheKey)) return this._searchCache.get(cacheKey);
-    const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=false`;
+    // match_case=false, match_whole=false 조합은 "벡터 유사도" 검색이 되어(bolls.life
+    // 공식 문서 확인) 뜻이 비슷하기만 해도 걸리고(과거 오탐 버그의 원인), 일부
+    // 번역본(KRV 포함)에서는 벡터 인덱스가 없는지 HTTP 400을 돌려줬다.
+    // match_whole=true 를 주면 어휘(문자열) 매칭으로 전환되어 더 안정적이다.
+    const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=true`;
     const data = await this._fetchJson(url);
     const list = Array.isArray(data) ? data : (data.results||[]);
     const mapped = list.map(v => ({
@@ -1722,7 +1726,14 @@ async function doSearch(){
     renderSearchResultsList();
   }catch(err){
     console.error(err);
-    wrap.innerHTML = `<div class="empty">검색에 실패했습니다. 설정에서 번역본 코드를 확인해주세요.<br><span style="font-size:.85em;">${escapeHtml(err.message)}</span></div>`;
+    wrap.innerHTML = `<div class="empty" style="text-align:center;">
+      <div style="margin-bottom:8px;">${emptySearchIllustrationSVG()}</div>
+      <div>검색 중 문제가 생겼어요.</div>
+      <div class="muted" style="margin-top:6px;font-size:.88em;">번역본 코드를 확인하거나 잠시 후 다시 시도해주세요.</div>
+      <button class="btn small ghost" id="search-retry-btn" style="margin-top:12px;">다시 시도</button>
+      <div class="muted" style="margin-top:10px;font-size:.78em;">${escapeHtml(err.message)}</div>
+    </div>`;
+    document.getElementById("search-retry-btn").addEventListener("click", doSearch);
   }
 }
 
