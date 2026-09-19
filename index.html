@@ -182,7 +182,13 @@
       <span class="badge" id="today-daycount"></span>
     </div>
     <div class="card" id="today-card">
-      <div class="passage-ref" id="today-ref">불러오는 중…</div>
+      <div class="row between" style="align-items:center;">
+        <div class="passage-ref" id="today-ref">불러오는 중…</div>
+        <div class="row" style="gap:2px;flex-shrink:0;">
+          <button class="btn ghost small" id="today-font-minus" title="글자 작게" aria-label="글자 작게" style="padding:5px 10px;">가-</button>
+          <button class="btn ghost small" id="today-font-plus" title="글자 크게" aria-label="글자 크게" style="padding:5px 10px;">가+</button>
+        </div>
+      </div>
       <div class="plan-progress"><i id="plan-progress-bar" style="width:0%"></i></div>
       <div class="muted" id="plan-progress-label"></div>
     </div>
