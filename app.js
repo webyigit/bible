@@ -98,6 +98,7 @@ let state = {
   readDates: LS.get("readDates", {}),   // { "2026-09-19": "🙏" } 로컬 개인 기록(오프라인 대비)
   bookmarks: LS.get("bookmarks", []),
   deletedBookmarks: LS.get("deletedBookmarks", []),
+  deletedMeditationNotes: LS.get("deletedMeditationNotes", {}), // { "2026-09-19": {text, deletedAt} }
   meditationNotes: LS.get("meditationNotes", {}), // { "2026-09-19": "오늘 느낀 점..." }
   chapterVerseCounts: LS.get("chapterVerseCounts", {}), // { "2026-09-19": 31 } 실제 API로 받아온 절 수
   todayVideoUrl: LS.get("todayVideoUrl", ""),
@@ -689,45 +690,40 @@ function renderMeditationList(){
   });
   wrap.querySelectorAll("[data-med-del]").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
-      await saveMeditationNote(btn.dataset.medDel, "");
-      if(btn.dataset.medDel === todayISO()) renderMeditation(currentPlanDay1based(), todayISO());
+      const date = btn.dataset.medDel;
+      state.deletedMeditationNotes[date] = { text: state.meditationNotes[date], deletedAt: Date.now() };
+      LS.set("deletedMeditationNotes", state.deletedMeditationNotes);
+      await saveMeditationNote(date, "");
+      if(date === todayISO()) renderMeditation(currentPlanDay1based(), todayISO());
       renderMeditationList();
-      toast("묵상노트를 삭제했습니다");
+      toast("삭제됨 탭으로 옮겼습니다");
     });
   });
 }
 
 function renderBookmarks(){
   if(bookmarkView === "meditation"){ renderMeditationList(); return; }
-  const wrap = document.getElementById("bookmark-list");
-  const list = bookmarkView === "trash" ? state.deletedBookmarks : state.bookmarks;
+  if(bookmarkView === "trash"){ renderTrash(); return; }
 
+  const wrap = document.getElementById("bookmark-list");
+  const list = state.bookmarks;
   if(list.length===0){
-    wrap.innerHTML = bookmarkView === "trash"
-      ? '<div class="empty">삭제된 북마크가 없습니다.</div>'
-      : '<div class="empty">저장된 북마크가 없습니다.<br>오늘 본문에서 구절을 눌러 북마크를 남겨보세요.</div>';
+    wrap.innerHTML = '<div class="empty">저장된 북마크가 없습니다.<br>오늘 본문에서 구절을 눌러 북마크를 남겨보세요.</div>';
     return;
   }
-
   wrap.innerHTML = "";
-  const sortKey = bookmarkView === "trash" ? "deletedAt" : "ts";
-  [...list].sort((a,b)=>b[sortKey]-a[sortKey]).forEach(b=>{
+  [...list].sort((a,b)=>b.ts-a.ts).forEach(b=>{
     const key = `${b.bookIdx}:${b.chapter}:${b.verse}`;
     const div = document.createElement("div");
     div.className = "bookmark-item";
-    const actionBtns = bookmarkView === "trash"
-      ? `<button class="btn ghost small" data-restore="${key}">↩️ 북마크하기</button>
-         <button class="btn ghost small" data-purge="${key}">🗑️ 영구삭제</button>`
-      : `<button class="btn ghost small" data-del="${key}">🗑️ 삭제</button>`;
     div.innerHTML = `
       <span class="ref">${b.book} ${b.chapter}:${b.verse}</span>
       <div class="muted" style="margin-top:4px;">${escapeHtml(b.text)}</div>
       ${b.note ? `<div class="note">${escapeHtml(b.note)}</div>` : ""}
-      <div class="row" style="margin-top:10px;gap:8px;">${actionBtns}</div>
+      <div class="row" style="margin-top:10px;gap:8px;"><button class="btn ghost small" data-del="${key}">🗑️ 삭제</button></div>
     `;
     wrap.appendChild(div);
   });
-
   wrap.querySelectorAll("[data-del]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const [bookIdx,chapter,verse] = btn.dataset.del.split(":").map(Number);
@@ -743,9 +739,48 @@ function renderBookmarks(){
       toast("삭제됨 탭으로 옮겼습니다");
     });
   });
-  wrap.querySelectorAll("[data-restore]").forEach(btn=>{
+}
+
+/* 북마크 휴지통 + 묵상노트 휴지통을 한 화면에서 함께 보여준다 */
+function renderTrash(){
+  const wrap = document.getElementById("bookmark-list");
+  const bookmarkItems = state.deletedBookmarks.map(b=> ({ type:"bookmark", key:`${b.bookIdx}:${b.chapter}:${b.verse}`, deletedAt:b.deletedAt, data:b }));
+  const meditationItems = Object.entries(state.deletedMeditationNotes).map(([date,info])=> ({ type:"meditation", key:date, deletedAt:info.deletedAt, data:{date, text:info.text} }));
+  const items = [...bookmarkItems, ...meditationItems].sort((a,b)=> b.deletedAt-a.deletedAt);
+
+  if(items.length===0){
+    wrap.innerHTML = '<div class="empty">삭제된 항목이 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = "";
+  items.forEach(item=>{
+    const div = document.createElement("div");
+    div.className = "bookmark-item";
+    if(item.type === "bookmark"){
+      const b = item.data;
+      div.innerHTML = `
+        <span class="ref">🔖 ${b.book} ${b.chapter}:${b.verse}</span>
+        <div class="muted" style="margin-top:4px;">${escapeHtml(b.text)}</div>
+        ${b.note ? `<div class="note">${escapeHtml(b.note)}</div>` : ""}
+        <div class="row" style="margin-top:10px;gap:8px;">
+          <button class="btn ghost small" data-restore-bm="${item.key}">↩️ 북마크하기</button>
+          <button class="btn ghost small" data-purge-bm="${item.key}">🗑️ 영구삭제</button>
+        </div>`;
+    } else {
+      div.innerHTML = `
+        <span class="ref">🌱 ${item.data.date}</span>
+        <div class="note" style="margin-top:4px;">${escapeHtml(item.data.text)}</div>
+        <div class="row" style="margin-top:10px;gap:8px;">
+          <button class="btn ghost small" data-restore-med="${item.key}">↩️ 묵상노트로 복원</button>
+          <button class="btn ghost small" data-purge-med="${item.key}">🗑️ 영구삭제</button>
+        </div>`;
+    }
+    wrap.appendChild(div);
+  });
+
+  wrap.querySelectorAll("[data-restore-bm]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
-      const [bookIdx,chapter,verse] = btn.dataset.restore.split(":").map(Number);
+      const [bookIdx,chapter,verse] = btn.dataset.restoreBm.split(":").map(Number);
       const idx = state.deletedBookmarks.findIndex(b=> b.bookIdx===bookIdx && b.chapter===chapter && b.verse===verse);
       if(idx<0) return;
       const [restored] = state.deletedBookmarks.splice(idx,1);
@@ -753,17 +788,38 @@ function renderBookmarks(){
       state.bookmarks.push(restored);
       LS.set("bookmarks", state.bookmarks);
       LS.set("deletedBookmarks", state.deletedBookmarks);
-      renderBookmarks();
+      renderTrash();
       renderVerses();
       toast("북마크를 복원했습니다");
     });
   });
-  wrap.querySelectorAll("[data-purge]").forEach(btn=>{
+  wrap.querySelectorAll("[data-purge-bm]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
-      const [bookIdx,chapter,verse] = btn.dataset.purge.split(":").map(Number);
+      const [bookIdx,chapter,verse] = btn.dataset.purgeBm.split(":").map(Number);
       state.deletedBookmarks = state.deletedBookmarks.filter(b=> !(b.bookIdx===bookIdx && b.chapter===chapter && b.verse===verse));
       LS.set("deletedBookmarks", state.deletedBookmarks);
-      renderBookmarks();
+      renderTrash();
+      toast("완전히 삭제했습니다");
+    });
+  });
+  wrap.querySelectorAll("[data-restore-med]").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const date = btn.dataset.restoreMed;
+      const info = state.deletedMeditationNotes[date];
+      if(!info) return;
+      delete state.deletedMeditationNotes[date];
+      LS.set("deletedMeditationNotes", state.deletedMeditationNotes);
+      await saveMeditationNote(date, info.text);
+      if(date === todayISO()) renderMeditation(currentPlanDay1based(), todayISO());
+      renderTrash();
+      toast("묵상노트를 복원했습니다");
+    });
+  });
+  wrap.querySelectorAll("[data-purge-med]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      delete state.deletedMeditationNotes[btn.dataset.purgeMed];
+      LS.set("deletedMeditationNotes", state.deletedMeditationNotes);
+      renderTrash();
       toast("완전히 삭제했습니다");
     });
   });
