@@ -507,15 +507,17 @@ const BibleAPI = {
     const list = Array.isArray(data) ? data : (data.results||[]);
     // API가 검색어를 단어 단위로 느슨하게 매칭해, 단어 하나만 우연히 겹쳐도
     // (예: "술 마시지 마라" → 지명 "마라"만 있는 구절) 결과에 섞여 나온다.
-    // 검색어를 이루는 단어가 전부 실제로 포함된 구절만 남긴다.
-    const tokens = query.trim().split(/\s+/).filter(Boolean);
+    // 띄어쓰기를 다 지우고 비교해서, 검색어를 띄어 쓰든 붙여 쓰든 실제 본문에
+    // 그 구절이 그대로(순서대로) 들어있는 것만 남긴다.
+    const stripSpace = s => (s||"").replace(/\s+/g, "").toLowerCase();
+    const qNorm = stripSpace(query);
     const result = list
       .map(v => ({
         bookIdx: (v.book ?? v.book_id ?? 1)-1,
         chapter: v.chapter, verse: v.verse,
         text: (v.text||"").replace(/<[^>]+>/g,"")
       }))
-      .filter(v => tokens.every(t => v.text.toLowerCase().includes(t.toLowerCase())));
+      .filter(v => stripSpace(v.text).includes(qNorm));
     this._searchCache.set(cacheKey, result);
     return result;
   }
