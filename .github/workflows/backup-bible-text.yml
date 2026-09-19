@@ -34,5 +34,12 @@ jobs:
             echo "변경 없음 — 커밋 생략"
           else
             git commit -m "성경 본문 백업 갱신 (자동)"
-            git push
+            # 본문을 긁는 동안(수 분) 다른 커밋이 먼저 push됐을 수 있으니, 그 위에
+            # 이어붙인 뒤 push한다 (한 번 실패하면 그 사이 또 밀렸을 수 있어 재시도).
+            for i in 1 2 3; do
+              git fetch origin main
+              git rebase origin/main && git push origin HEAD:main && break
+              git rebase --abort || true
+              sleep 5
+            done
           fi
