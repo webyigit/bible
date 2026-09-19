@@ -805,40 +805,124 @@ function renderEmojiPicker(pickedEmoji){
   });
 }
 
-/* 화면 정중앙에서 색종이가 사방으로 펑 터져 화면 전체를 채우는 축제 효과 */
+/* 실제 불꽃놀이처럼: 로켓이 아래에서 솟아올라 정점에서 사방으로 반짝이며 터진다 */
 function spawnConfetti(){
-  const colors = ["#8b5cf6","#ff8fab","#ffd166","#06d6a0","#4cc9f0"];
-  const emojis = ["🎉","✨","🎊","💜","⭐"];
-  const cx = window.innerWidth/2, cy = window.innerHeight/2;
-  const maxDist = Math.hypot(window.innerWidth, window.innerHeight)/2 + 60;
-  const count = 110;
-  for(let i=0;i<count;i++){
-    const p = document.createElement("span");
-    const useEmoji = Math.random() < 0.25;
-    if(useEmoji){
-      p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-      p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;font-size:${16+Math.random()*14}px;
-        pointer-events:none;z-index:9999;transform:translate(-50%,-50%);`;
-    } else {
-      const size = 6 + Math.random()*8;
-      p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;
-        background:${colors[i%colors.length]};border-radius:${Math.random()<0.5?"50%":"2px"};
-        pointer-events:none;z-index:9999;transform:translate(-50%,-50%);`;
-    }
-    document.body.appendChild(p);
-    const angle = Math.random()*Math.PI*2;
-    const dist = maxDist*(0.4+Math.random()*0.6);
-    const dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist;
-    const rot = (Math.random()-0.5)*720;
-    const duration = 1100 + Math.random()*700;
-    const delay = Math.random()*120;
-    p.animate([
-      { transform: "translate(-50%,-50%) translate(0,0) rotate(0deg)", opacity: 1 },
-      { transform: `translate(-50%,-50%) translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 1, offset: 0.7 },
-      { transform: `translate(-50%,-50%) translate(${dx}px, ${dy+140}px) rotate(${rot}deg)`, opacity: 0 }
-    ], { duration, delay, easing: "cubic-bezier(.15,.6,.35,1)", fill: "forwards" })
-      .onfinish = () => p.remove();
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;";
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = window.innerWidth, H = window.innerHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+
+  const GRAVITY = 0.05;
+  const PALETTES = [
+    ["#ff6b6b","#ffd166"], ["#4dd4ff","#5e7bff"], ["#d16bff","#ff6bd8"],
+    ["#7dff8f","#c8ff5e"], ["#ffe15e","#ff9d5e"], ["#ffffff","#bfe9ff"]
+  ];
+
+  let rockets = [], sparks = [];
+
+  function launchRocket(){
+    const x = W*(0.18+Math.random()*0.64);
+    rockets.push({
+      x, y: H+20, targetY: H*(0.16+Math.random()*0.34),
+      vy: -(7.5+Math.random()*2.2), trail: []
+    });
   }
+  const burstCount = 4 + Math.floor(Math.random()*2);
+  for(let i=0;i<burstCount;i++) setTimeout(launchRocket, i*(260+Math.random()*260));
+
+  function explode(x,y){
+    const [c1,c2] = PALETTES[Math.floor(Math.random()*PALETTES.length)];
+    const n = 60 + Math.floor(Math.random()*35);
+    for(let i=0;i<n;i++){
+      const angle = (Math.PI*2*i)/n + (Math.random()-0.5)*0.15;
+      const speed = 1.8 + Math.random()*4.2;
+      sparks.push({
+        x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+        color: Math.random()<0.5?c1:c2, life: 1,
+        decay: 0.010 + Math.random()*0.012, trail: [],
+        twinkle: Math.random()<0.35
+      });
+    }
+  }
+
+  const startTime = performance.now();
+  const maxDuration = 3400;
+
+  function frame(now){
+    const t = now - startTime;
+    ctx.clearRect(0,0,W,H);
+    ctx.lineCap = "round";
+
+    rockets.forEach(r=>{
+      r.trail.push({x:r.x,y:r.y});
+      if(r.trail.length>8) r.trail.shift();
+      r.y += r.vy;
+      r.vy += GRAVITY*0.4;
+      for(let i=1;i<r.trail.length;i++){
+        const a = i/r.trail.length;
+        ctx.strokeStyle = `rgba(255,238,180,${a*0.8})`;
+        ctx.lineWidth = 2*a;
+        ctx.beginPath();
+        ctx.moveTo(r.trail[i-1].x, r.trail[i-1].y);
+        ctx.lineTo(r.trail[i].x, r.trail[i].y);
+        ctx.stroke();
+      }
+    });
+    rockets = rockets.filter(r=>{
+      if(r.y <= r.targetY || r.vy >= 0){ explode(r.x, r.y); return false; }
+      return true;
+    });
+
+    sparks.forEach(s=>{
+      s.trail.push({x:s.x, y:s.y});
+      if(s.trail.length>5) s.trail.shift();
+      s.vy += GRAVITY;
+      s.vx *= 0.985; s.vy *= 0.985;
+      s.x += s.vx; s.y += s.vy;
+      s.life -= s.decay;
+    });
+    sparks = sparks.filter(s=>s.life>0);
+
+    sparks.forEach(s=>{
+      const flicker = s.twinkle ? (0.5+0.5*Math.sin(t/40 + s.x)) : 1;
+      const alpha = Math.max(0, s.life) * flicker;
+      for(let i=1;i<s.trail.length;i++){
+        const a = (i/s.trail.length) * alpha;
+        ctx.strokeStyle = hexToRgba(s.color, a*0.9);
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(s.trail[i-1].x, s.trail[i-1].y);
+        ctx.lineTo(s.trail[i].x, s.trail[i].y);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.fillStyle = hexToRgba(s.color, alpha);
+      ctx.shadowColor = s.color;
+      ctx.shadowBlur = 8;
+      ctx.arc(s.x, s.y, 1.6, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    if(t < maxDuration || rockets.length || sparks.length){
+      requestAnimationFrame(frame);
+    } else {
+      canvas.remove();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function hexToRgba(hex, alpha){
+  const h = hex.replace("#","");
+  const r = parseInt(h.substring(0,2),16);
+  const g = parseInt(h.substring(2,4),16);
+  const b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function renderReactorList(list){
