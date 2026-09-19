@@ -1232,7 +1232,7 @@ function spawnConfetti(){
   const cx = W/2, cy = H/2;
   const maxDist = Math.hypot(W,H)/2 + 30;
 
-  let sparks = [];
+  let pieces = [];
 
   function burst(colors, delay){
     setTimeout(()=>{
@@ -1240,11 +1240,14 @@ function spawnConfetti(){
       for(let i=0;i<n;i++){
         const angle = (Math.PI*2*i)/n + Math.random()*0.3;
         const speed = (maxDist/125) * (0.45+Math.random()*0.75);
-        sparks.push({
+        pieces.push({
           x: cx, y: cy, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
           color: colors[i%colors.length], life: 1,
-          decay: 0.005 + Math.random()*0.006, trail: [],
-          twinkle: Math.random()<0.35
+          decay: 0.005 + Math.random()*0.006,
+          size: 5 + Math.random()*5,
+          rot: Math.random()*Math.PI*2,
+          rotSpeed: (Math.random()-0.5)*0.35,
+          round: Math.random()<0.4 // 꽃가루처럼 둥근 조각과 각진 색종이 조각을 섞는다
         });
       }
     }, delay);
@@ -1261,40 +1264,33 @@ function spawnConfetti(){
   function frame(now){
     const t = now - startTime;
     ctx.clearRect(0,0,W,H);
-    ctx.lineCap = "round";
 
-    sparks.forEach(s=>{
-      s.trail.push({x:s.x, y:s.y});
-      if(s.trail.length>6) s.trail.shift();
-      s.vy += GRAVITY;
-      s.vx *= FRICTION; s.vy *= FRICTION;
-      s.x += s.vx; s.y += s.vy;
-      s.life -= s.decay;
+    pieces.forEach(p=>{
+      p.vy += GRAVITY;
+      p.vx *= FRICTION; p.vy *= FRICTION;
+      p.x += p.vx; p.y += p.vy;
+      p.rot += p.rotSpeed;
+      p.life -= p.decay;
     });
-    sparks = sparks.filter(s=>s.life>0);
+    pieces = pieces.filter(p=>p.life>0);
 
-    sparks.forEach(s=>{
-      const flicker = s.twinkle ? (0.5+0.5*Math.sin(t/40 + s.x)) : 1;
-      const alpha = Math.max(0, s.life) * flicker;
-      for(let i=1;i<s.trail.length;i++){
-        const a = (i/s.trail.length) * alpha;
-        ctx.strokeStyle = hexToRgba(s.color, a*0.9);
-        ctx.lineWidth = 1.6;
+    pieces.forEach(p=>{
+      const alpha = Math.max(0, p.life);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.scale(Math.cos(p.rot), 1); // 종이·꽃잎이 뒤집히며 팔랑이는 느낌
+      ctx.fillStyle = hexToRgba(p.color, alpha);
+      if(p.round){
         ctx.beginPath();
-        ctx.moveTo(s.trail[i-1].x, s.trail[i-1].y);
-        ctx.lineTo(s.trail[i].x, s.trail[i].y);
-        ctx.stroke();
+        ctx.ellipse(0, 0, p.size/2, p.size/3, 0, 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-p.size/2, -p.size/3, p.size, p.size*0.66);
       }
-      ctx.beginPath();
-      ctx.fillStyle = hexToRgba(s.color, alpha);
-      ctx.shadowColor = s.color;
-      ctx.shadowBlur = 8;
-      ctx.arc(s.x, s.y, 1.6, 0, Math.PI*2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      ctx.restore();
     });
 
-    if(t < maxDuration || sparks.length){
+    if(t < maxDuration || pieces.length){
       requestAnimationFrame(frame);
     } else {
       canvas.remove();
