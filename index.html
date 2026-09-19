@@ -247,14 +247,35 @@
       <div class="muted" id="api-debug" style="margin-top:10px;white-space:pre-wrap;"></div>
     </div>
 
-    <h2 class="section-title">오늘의 영상 (선택)</h2>
+    <h2 class="section-title">오늘의 영상 — 재생목록 자동 연동 (선택)</h2>
     <div class="card">
-      <label class="muted" for="today-video-input">유튜브 링크 (매일 올라오는 영상 주소를 붙여넣으세요)</label>
+      <p class="muted" style="margin-top:0;">
+        매일 영상이 하나씩 추가되는 유튜브 재생목록을 등록하면, 재생목록의 가장 마지막(최신) 영상을
+        자동으로 가져와 "오늘의 영상" 카드에 표시합니다. 하루에 한 번만 확인하며,
+        Firebase가 연결되어 있으면 그룹 전체 화면에 공유됩니다.
+      </p>
+      <label class="muted" for="playlist-input">재생목록 링크 또는 ID</label>
+      <div style="margin-top:6px;"><input type="text" id="playlist-input" placeholder="https://www.youtube.com/playlist?list=..."></div>
+      <label class="muted" style="margin-top:10px;display:block;" for="youtube-apikey-input">
+        YouTube Data API 키 (이 기기에만 저장, 공유되지 않음)
+      </label>
+      <div style="margin-top:6px;"><input type="text" id="youtube-apikey-input" placeholder="AIza..."></div>
+      <button class="btn small" id="playlist-save" style="margin-top:10px;">저장하고 지금 확인</button>
+      <div class="muted" id="playlist-status" style="margin-top:8px;"></div>
+      <p class="muted" style="margin-top:10px;">
+        API 키는 <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">Google Cloud Console</a>에서
+        무료로 발급받을 수 있습니다 (YouTube Data API v3 사용 설정 → 사용자 인증 정보 → API 키 만들기).
+      </p>
+    </div>
+
+    <h2 class="section-title">오늘의 영상 — 직접 링크 (선택)</h2>
+    <div class="card">
+      <label class="muted" for="today-video-input">유튜브 링크를 직접 붙여넣어 고정하고 싶을 때</label>
       <div class="row" style="margin-top:6px;">
         <input type="text" id="today-video-input" placeholder="https://youtu.be/영상ID">
         <button class="btn small" id="today-video-save">저장</button>
       </div>
-      <p class="muted" style="margin-top:8px;">Firebase가 연결되어 있으면 그룹 전체 화면에 공유되고, 아니면 내 기기에만 표시됩니다.</p>
+      <p class="muted" style="margin-top:8px;">재생목록 자동 연동을 쓰지 않을 때, 또는 특정 날 영상을 수동으로 고정하고 싶을 때 사용하세요.</p>
     </div>
 
     <h2 class="section-title">그룹 기능 (Firebase)</h2>

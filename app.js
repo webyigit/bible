@@ -42,6 +42,13 @@ function parseYouTubeId(url){
   for(const re of patterns){ const m = url.match(re); if(m) return m[1]; }
   return null;
 }
+function parsePlaylistId(input){
+  if(!input) return null;
+  const m = input.match(/[?&]list=([\w-]+)/);
+  if(m) return m[1];
+  if(/^[\w-]{10,}$/.test(input.trim())) return input.trim(); // 이미 ID만 입력한 경우
+  return null;
+}
 
 /* ---------- 로컬 저장소 ---------- */
 const LS = {
@@ -69,6 +76,9 @@ let state = {
   readDates: LS.get("readDates", {}),   // { "2026-09-19": "🙏" } 로컬 개인 기록(오프라인 대비)
   bookmarks: LS.get("bookmarks", []),
   todayVideoUrl: LS.get("todayVideoUrl", ""),
+  playlistId: LS.get("playlistId", ""),
+  youtubeApiKey: LS.get("youtubeApiKey", ""), // 이 기기에만 저장, Firestore에는 절대 쓰지 않음
+  videoAutoFetchedDate: LS.get("videoAutoFetchedDate", ""),
 };
 if(!state.uid){ state.uid = "u_"+Math.random().toString(36).slice(2)+Date.now().toString(36); LS.set("uid", state.uid); }
 if(!state.planStart){ state.planStart = todayISO(); LS.set("planStart", state.planStart); }
@@ -167,6 +177,7 @@ function watchTodayVideo(){
 async function saveTodayVideo(url){
   state.todayVideoUrl = url;
   LS.set("todayVideoUrl", url);
+  document.getElementById("today-video-input").value = url;
   if(fb.ready){
     const {doc, setDoc} = fb.mod;
     await setDoc(doc(fb.db,"config","video"), { url, updatedAt: Date.now() }, {merge:true});
@@ -181,6 +192,48 @@ function renderVideoCard(){
   card.href = state.todayVideoUrl;
   document.getElementById("today-video-thumb").src = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
   card.style.display = "block";
+}
+
+/* ---------- 재생목록에서 '오늘의 영상' 자동 가져오기 ----------
+   YouTube Data API v3 playlistItems.list 를 페이지 끝까지 순회해 재생목록의
+   가장 마지막(=보통 가장 최근에 추가된) 영상을 오늘의 영상으로 사용한다.
+   하루 한 번만 호출해 무료 할당량(1일 10,000 유닛, 호출당 1유닛)을 아낀다. */
+async function fetchLatestPlaylistVideo(apiKey, playlistId){
+  let pageToken = "";
+  let lastItem = null;
+  let guard = 0;
+  do{
+    const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${encodeURIComponent(playlistId)}&key=${encodeURIComponent(apiKey)}${pageToken ? `&pageToken=${pageToken}` : ""}`;
+    const res = await fetch(url);
+    if(!res.ok){
+      const body = await res.text().catch(()=> "");
+      throw new Error(`HTTP ${res.status} — ${body.slice(0,200)}`);
+    }
+    const data = await res.json();
+    if(Array.isArray(data.items) && data.items.length) lastItem = data.items[data.items.length-1];
+    pageToken = data.nextPageToken || "";
+    guard++;
+  } while(pageToken && guard < 200);
+  if(!lastItem) throw new Error("재생목록에 영상이 없습니다");
+  const vid = lastItem.snippet.resourceId.videoId;
+  return `https://www.youtube.com/watch?v=${vid}`;
+}
+
+async function autoFetchTodayVideo(force){
+  if(!state.playlistId || !state.youtubeApiKey) return;
+  if(!force && state.videoAutoFetchedDate === todayISO()) return;
+  const statusEl = document.getElementById("playlist-status");
+  if(statusEl) statusEl.textContent = "재생목록에서 오늘의 영상을 확인하는 중…";
+  try{
+    const url = await fetchLatestPlaylistVideo(state.youtubeApiKey, state.playlistId);
+    await saveTodayVideo(url);
+    state.videoAutoFetchedDate = todayISO();
+    LS.set("videoAutoFetchedDate", state.videoAutoFetchedDate);
+    if(statusEl) statusEl.textContent = "✅ 최신 영상을 가져왔습니다: " + url;
+  }catch(err){
+    console.error("재생목록 자동 확인 실패", err);
+    if(statusEl) statusEl.textContent = "❌ 재생목록 확인 실패: " + err.message;
+  }
 }
 
 async function pushReaction(dateISO, emoji){
@@ -247,6 +300,8 @@ function applySettings(){
   document.getElementById("bible-translation").value = state.translation;
   document.getElementById("plan-start").value = state.planStart;
   document.getElementById("today-video-input").value = state.todayVideoUrl;
+  document.getElementById("playlist-input").value = state.playlistId;
+  document.getElementById("youtube-apikey-input").value = state.youtubeApiKey;
 }
 function setDarkMode(on){
   state.darkMode = on; LS.set("darkMode", state.darkMode); applySettings();
@@ -256,6 +311,21 @@ document.getElementById("btn-theme-toggle").addEventListener("click", ()=> setDa
 document.getElementById("today-video-save").addEventListener("click", ()=>{
   saveTodayVideo(document.getElementById("today-video-input").value.trim());
   toast("오늘의 영상 링크를 저장했습니다");
+});
+document.getElementById("playlist-save").addEventListener("click", ()=>{
+  const raw = document.getElementById("playlist-input").value.trim();
+  const id = parsePlaylistId(raw);
+  const statusEl = document.getElementById("playlist-status");
+  if(raw && !id){ statusEl.textContent = "❌ 재생목록 링크에서 ID를 찾지 못했습니다. list= 뒤의 값을 확인해주세요."; return; }
+  state.playlistId = id || "";
+  state.youtubeApiKey = document.getElementById("youtube-apikey-input").value.trim();
+  LS.set("playlistId", state.playlistId);
+  LS.set("youtubeApiKey", state.youtubeApiKey);
+  if(!state.playlistId || !state.youtubeApiKey){
+    statusEl.textContent = "재생목록 ID와 API 키를 모두 입력해야 자동 연동이 켜집니다.";
+    return;
+  }
+  autoFetchTodayVideo(true);
 });
 document.getElementById("font-plus").addEventListener("click", ()=>{
   state.fontScale = Math.min(1.4, +(state.fontScale+0.1).toFixed(2)); LS.set("fontScale", state.fontScale); applySettings();
@@ -531,3 +601,4 @@ applySettings();
 renderToday();
 renderRank();
 initFirebase();
+autoFetchTodayVideo(false);
