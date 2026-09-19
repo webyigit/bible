@@ -52,6 +52,29 @@ const MEDITATION_PROMPTS = [
   "본문에서 하나님이 나에게 하시는 약속이 있다면 무엇인가요?",
 ];
 
+/* 검색 결과 구절마다 붙일 적용/묵상 질문 — 특정 구절 해석을 단정하지 않고
+   누구나 자기 상황에 비춰 스스로 답해보는 범용 질문이라 어떤 구절에
+   붙여도 안전하다(MEDITATION_PROMPTS와 같은 원칙). 구절 번호를 기준으로
+   결정론적으로 골라서, 같은 구절은 다시 봐도 같은 질문이 붙는다. */
+const VERSE_APPLICATION_PROMPTS = [
+  "이 말씀을 오늘 하루 어떻게 적용해볼 수 있을까요?",
+  "이 구절에서 하나님의 성품 중 무엇이 보이나요?",
+  "이 말씀이 나에게 주는 위로나 도전은 무엇인가요?",
+  "이 구절을 읽고 떠오르는 기도 제목이 있다면 무엇인가요?",
+  "이 말씀대로 산다면 오늘 나는 무엇을 다르게 할 수 있을까요?",
+  "이 구절 속에서 나와 비슷한 상황이나 감정을 발견했나요?",
+  "이 말씀을 누군가와 나눈다면 어떤 이야기를 하고 싶나요?",
+  "이 구절에서 순종해야 할 부분이 있다면 무엇일까요?",
+  "이 말씀은 어떤 약속이나 소망을 담고 있나요?",
+  "이 구절을 통해 돌이키거나 회개할 부분이 있나요?",
+  "이 말씀 속에서 감사할 이유를 찾는다면 무엇인가요?",
+  "이 구절이 지금 내 삶의 어떤 부분과 맞닿아 있나요?",
+];
+function pickApplicationPrompt(bookIdx, chapter, verse){
+  const idx = (bookIdx*10007 + chapter*101 + verse) % VERSE_APPLICATION_PROMPTS.length;
+  return VERSE_APPLICATION_PROMPTS[idx];
+}
+
 /* 검색 결과가 없을 때 대신 추천할 어휘 — 성경에 실제로 자주 나오는 단어 위주로,
    검색해도 결과가 있을 만한 것만 골랐다. 사용자가 입력한 검색어와 이 목록을
    비교해(findSimilarTerms) 가장 가까운 것을 추천한다. */
@@ -1918,7 +1941,8 @@ async function renderSearchResultsList(){
     const div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `<div class="passage-ref" style="font-size:1em;">${bookName} ${r.chapter}:${r.verse}</div>
-      <div style="margin-top:4px;">${highlightMatch(r.text, q)}</div>`;
+      <div style="margin-top:4px;">${highlightMatch(r.text, q)}</div>
+      <div class="muted" style="margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-size:.88em;">💭 ${escapeHtml(pickApplicationPrompt(r.bookIdx, r.chapter, r.verse))}</div>`;
     resultsWrap.appendChild(div);
   });
   wrap.appendChild(resultsWrap);
