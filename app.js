@@ -52,6 +52,75 @@ const MEDITATION_PROMPTS = [
   "본문에서 하나님이 나에게 하시는 약속이 있다면 무엇인가요?",
 ];
 
+/* ---------- 성경 인물 색인 ----------
+   구약·신약을 통틀어 잘 알려진 인물 위주로 뽑았다. 요약은 여러 성경 인물 사전에서
+   공통으로 확인되는 기본 사실(누구인지, 등장 본문)만 짧게 적었고, 신학적 해석이나
+   논쟁적인 내용은 넣지 않았다. 아바타는 실존 인물의 얼굴을 그리는 대신, 역할을
+   상징하는 이모지 아이콘 배지로만 표시한다. */
+const PEOPLE = [
+  {name:"아담", category:"창조", icon:"🌱", color:["#8bc98b","#4a8f4a"], summary:"하나님이 흙으로 지으신 첫 사람으로, 에덴동산에서 살았다.", refs:"창세기 1~5장"},
+  {name:"하와", category:"창조", icon:"🍎", color:["#ffb199","#e0577a"], summary:"아담의 아내로 지음받은 첫 여자.", refs:"창세기 2~4장"},
+  {name:"노아", category:"족장 이전", icon:"🚢", color:["#7fb3d5","#4a7fa5"], summary:"하나님의 명령으로 방주를 지어 대홍수에서 가족과 동물들을 구원했다.", refs:"창세기 6~9장"},
+  {name:"아브라함", category:"족장", icon:"⭐", color:["#e0b04c","#8b5cf6"], summary:"믿음의 조상으로 불리며, 하나님과 언약을 맺고 이삭을 낳았다.", refs:"창세기 12~25장"},
+  {name:"사라", category:"족장", icon:"⛺", color:["#ff9fc2","#c2559a"], summary:"아브라함의 아내로, 노년에 이삭을 낳았다.", refs:"창세기 11~23장"},
+  {name:"이삭", category:"족장", icon:"🐏", color:["#c9a27e","#8b5cf6"], summary:"아브라함과 사라의 아들이며, 야곱과 에서의 아버지다.", refs:"창세기 21~35장"},
+  {name:"리브가", category:"족장", icon:"🏺", color:["#ff9fc2","#c2559a"], summary:"이삭의 아내로, 야곱과 에서의 어머니다.", refs:"창세기 24~27장"},
+  {name:"야곱", category:"족장", icon:"🪜", color:["#c9a27e","#8b5cf6"], summary:"이삭의 아들로 훗날 '이스라엘'이라는 이름을 받았으며, 열두 지파의 조상이 되었다.", refs:"창세기 25~49장"},
+  {name:"라헬", category:"족장", icon:"🐑", color:["#ff9fc2","#c2559a"], summary:"야곱의 아내로, 요셉과 베냐민의 어머니다.", refs:"창세기 29~35장"},
+  {name:"레아", category:"족장", icon:"🌾", color:["#ff9fc2","#c2559a"], summary:"야곱의 아내로, 여섯 아들의 어머니다.", refs:"창세기 29~35장"},
+  {name:"요셉", category:"족장", icon:"🌾", color:["#e0b04c","#8b5cf6"], summary:"야곱의 아들로, 애굽의 총리가 되어 흉년에서 가족을 구했다.", refs:"창세기 37~50장"},
+  {name:"모세", category:"출애굽", icon:"📜", color:["#7fb3d5","#4a7fa5"], summary:"이스라엘 백성을 애굽에서 이끌어냈고, 시내산에서 십계명을 받았다.", refs:"출애굽기~신명기"},
+  {name:"아론", category:"출애굽", icon:"⚱️", color:["#e0b04c","#8b5cf6"], summary:"모세의 형으로, 이스라엘의 첫 대제사장이 되었다.", refs:"출애굽기~민수기"},
+  {name:"미리암", category:"출애굽", icon:"🎵", color:["#ff9fc2","#c2559a"], summary:"모세와 아론의 누이로, 여선지자로 불렸다.", refs:"출애굽기 15장, 민수기 12장"},
+  {name:"여호수아", category:"출애굽", icon:"⚔️", color:["#7fb3d5","#4a7fa5"], summary:"모세의 후계자로, 가나안 땅 정복을 이끌었다.", refs:"여호수아서"},
+  {name:"드보라", category:"사사", icon:"⚖️", color:["#ff9fc2","#c2559a"], summary:"이스라엘의 여사사이자 여선지자로 활동했다.", refs:"사사기 4~5장"},
+  {name:"기드온", category:"사사", icon:"🏺", color:["#c9a27e","#8b5cf6"], summary:"삼백 용사로 미디안 군대를 물리친 사사다.", refs:"사사기 6~8장"},
+  {name:"삼손", category:"사사", icon:"🦁", color:["#c9a27e","#8b5cf6"], summary:"큰 힘을 가진 사사로, 들릴라에게 배신당해 힘을 잃었다.", refs:"사사기 13~16장"},
+  {name:"룻", category:"룻기", icon:"🌾", color:["#e0b04c","#8b5cf6"], summary:"시어머니 나오미를 따른 모압 여인으로, 다윗의 증조모가 되었다.", refs:"룻기"},
+  {name:"나오미", category:"룻기", icon:"🌾", color:["#ff9fc2","#c2559a"], summary:"룻의 시어머니로, 베들레헴으로 돌아온 과부다.", refs:"룻기"},
+  {name:"사무엘", category:"사사·선지자", icon:"🕯️", color:["#7fb3d5","#4a7fa5"], summary:"이스라엘의 마지막 사사이자 선지자로, 사울과 다윗에게 기름을 부었다.", refs:"사무엘상"},
+  {name:"사울", category:"왕", icon:"👑", color:["#9a94b5","#5b4a7a"], summary:"이스라엘의 첫 번째 왕이다.", refs:"사무엘상"},
+  {name:"다윗", category:"왕", icon:"🪨", color:["#e0b04c","#8b5cf6"], summary:"이스라엘의 왕으로, 골리앗을 물리쳤고 시편의 많은 부분을 지었다.", refs:"사무엘상~열왕기상"},
+  {name:"골리앗", category:"왕정", icon:"⚔️", color:["#9a94b5","#5b4a7a"], summary:"블레셋의 거인 장수로, 소년 다윗에게 패했다.", refs:"사무엘상 17장"},
+  {name:"요나단", category:"왕정", icon:"🏹", color:["#7fb3d5","#4a7fa5"], summary:"사울의 아들로, 다윗과 깊은 우정을 나누었다.", refs:"사무엘상"},
+  {name:"솔로몬", category:"왕", icon:"👑", color:["#e0b04c","#8b5cf6"], summary:"다윗의 아들로, 지혜로운 왕이자 예루살렘 성전을 건축했다.", refs:"열왕기상 1~11장"},
+  {name:"엘리야", category:"선지자", icon:"🔥", color:["#f4a261","#e0577a"], summary:"갈멜산에서 바알 선지자들과 대결했고, 불수레를 타고 승천했다.", refs:"열왕기상~열왕기하"},
+  {name:"엘리사", category:"선지자", icon:"🌊", color:["#7fb3d5","#4a7fa5"], summary:"엘리야의 후계자로 활동한 선지자다.", refs:"열왕기하"},
+  {name:"이사야", category:"대선지자", icon:"📜", color:["#7fb3d5","#4a7fa5"], summary:"메시아에 대한 예언을 많이 남긴 대선지자다.", refs:"이사야서"},
+  {name:"예레미야", category:"대선지자", icon:"😢", color:["#7fb3d5","#4a7fa5"], summary:"'눈물의 선지자'로 불리며 예루살렘의 멸망을 예언했다.", refs:"예레미야서"},
+  {name:"에스겔", category:"대선지자", icon:"👁️", color:["#7fb3d5","#4a7fa5"], summary:"바벨론 포로 시대에 활동한 선지자다.", refs:"에스겔서"},
+  {name:"다니엘", category:"대선지자", icon:"🦁", color:["#9a94b5","#5b4a7a"], summary:"바벨론과 페르시아 궁정에서 활동했으며, 사자굴에서 구원받았다.", refs:"다니엘서"},
+  {name:"요나", category:"소선지자", icon:"🐋", color:["#7fb3d5","#4a7fa5"], summary:"니느웨로 가라는 하나님의 명령을 피하다 큰 물고기 뱃속에 들어갔다.", refs:"요나서"},
+  {name:"욥", category:"지혜서", icon:"⛅", color:["#9a94b5","#5b4a7a"], summary:"극심한 고난 속에서도 믿음을 지킨 인물이다.", refs:"욥기"},
+  {name:"에스더", category:"포로·귀환", icon:"👑", color:["#ff9fc2","#c2559a"], summary:"페르시아의 왕비가 되어 위기에 처한 유대 민족을 구했다.", refs:"에스더서"},
+  {name:"모르드개", category:"포로·귀환", icon:"📯", color:["#e0b04c","#8b5cf6"], summary:"에스더의 사촌으로, 유대인을 구하는 데 힘썼다.", refs:"에스더서"},
+  {name:"느헤미야", category:"포로·귀환", icon:"🧱", color:["#c9a27e","#8b5cf6"], summary:"예루살렘 성벽을 재건한 지도자다.", refs:"느헤미야서"},
+  {name:"에스라", category:"포로·귀환", icon:"📜", color:["#7fb3d5","#4a7fa5"], summary:"율법학자로, 포로 귀환 후 신앙 개혁을 이끌었다.", refs:"에스라서"},
+  {name:"마리아", category:"신약·예수 탄생", icon:"🕊️", color:["#a7c7e7","#5b7fa6"], summary:"예수 그리스도의 어머니다.", refs:"마태복음, 누가복음"},
+  {name:"요셉(예수의 아버지)", category:"신약·예수 탄생", icon:"🔨", color:["#c9a27e","#8b5cf6"], summary:"마리아의 남편으로, 목수 일을 했다.", refs:"마태복음, 누가복음"},
+  {name:"세례요한", category:"신약·예수 탄생", icon:"🕊️", color:["#a7c7e7","#5b7fa6"], summary:"예수의 길을 예비한 선지자로, 요단강에서 세례를 베풀었다.", refs:"마태복음 3장 외"},
+  {name:"베드로", category:"제자·사도", icon:"🎣", color:["#7fb3d5","#4a7fa5"], summary:"예수의 열두 제자 중 한 사람으로, 초대교회의 지도자가 되었다.", refs:"사복음서, 사도행전"},
+  {name:"안드레", category:"제자·사도", icon:"🎣", color:["#7fb3d5","#4a7fa5"], summary:"베드로의 형제로, 어부 출신 제자다.", refs:"사복음서"},
+  {name:"야고보(세베대의 아들)", category:"제자·사도", icon:"🎣", color:["#7fb3d5","#4a7fa5"], summary:"요한의 형제로, 열두 제자 중 한 사람이다.", refs:"사복음서"},
+  {name:"요한", category:"제자·사도", icon:"🕊️", color:["#a7c7e7","#5b7fa6"], summary:"열두 제자 중 한 사람으로, 요한복음과 요한계시록을 기록했다고 전해진다.", refs:"사복음서, 요한계시록"},
+  {name:"도마", category:"제자·사도", icon:"❓", color:["#7fb3d5","#4a7fa5"], summary:"예수의 부활을 의심했다가 직접 확인한 제자다.", refs:"요한복음 20장"},
+  {name:"마태", category:"제자·사도", icon:"📖", color:["#7fb3d5","#4a7fa5"], summary:"세리 출신 제자로, 마태복음을 기록했다고 전해진다.", refs:"마태복음"},
+  {name:"막달라마리아", category:"신약·여성", icon:"🌹", color:["#ff9fc2","#c2559a"], summary:"예수를 따르던 여성 중 한 사람으로, 부활의 첫 증인이었다.", refs:"사복음서"},
+  {name:"마르다와나사로", category:"신약·여성", icon:"🏠", color:["#c9a27e","#8b5cf6"], summary:"베다니에 살던 남매로, 나사로는 죽은 지 나흘 만에 살아났다.", refs:"요한복음 11장"},
+  {name:"바울", category:"사도", icon:"✍️", color:["#9a94b5","#5b4a7a"], summary:"이방인을 위한 사도로, 신약의 여러 서신서를 기록했다.", refs:"사도행전, 서신서"},
+  {name:"바나바", category:"사도", icon:"🤝", color:["#7fb3d5","#4a7fa5"], summary:"바울의 초기 선교 동역자였다.", refs:"사도행전"},
+  {name:"스데반", category:"초대교회", icon:"⭐", color:["#e0b04c","#8b5cf6"], summary:"초대교회 최초의 순교자다.", refs:"사도행전 6~7장"},
+  {name:"디모데", category:"사도의 제자", icon:"📖", color:["#7fb3d5","#4a7fa5"], summary:"바울의 제자로, 디모데전후서의 수신자다.", refs:"사도행전, 디모데전후서"},
+  {name:"누가", category:"사도의 제자", icon:"✍️", color:["#7fb3d5","#4a7fa5"], summary:"의사 출신으로, 누가복음과 사도행전을 기록했다고 전해진다.", refs:"누가복음, 사도행전"},
+];
+
+function chosung(ch){
+  const code = (ch||"").charCodeAt(0) - 0xAC00;
+  if(code < 0 || code > 11171) return null;
+  const CHO = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+  return CHO[Math.floor(code / 588)];
+}
+
 /* ---------- 유튜브 링크 → 영상ID / 썸네일 ---------- */
 function parseYouTubeId(url){
   if(!url) return null;
@@ -983,6 +1052,76 @@ async function doSearch(){
     wrap.innerHTML = `<div class="empty">검색에 실패했습니다. 설정에서 번역본 코드를 확인해주세요.<br><span style="font-size:.85em;">${escapeHtml(err.message)}</span></div>`;
   }
 }
+
+/* ---------- 검색 탭: 본문 검색 / 인물 검색 전환 ---------- */
+document.querySelectorAll("#search-mode-seg .seg-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const mode = btn.dataset.searchMode;
+    document.querySelectorAll("#search-mode-seg .seg-btn").forEach(b=>{
+      b.classList.toggle("active", b.dataset.searchMode === mode);
+    });
+    document.getElementById("search-mode-text").style.display = mode === "text" ? "block" : "none";
+    document.getElementById("search-mode-people").style.display = mode === "people" ? "block" : "none";
+  });
+});
+document.querySelector('#search-mode-seg .seg-btn[data-search-mode="text"]').classList.add("active");
+
+/* ---------- 성경 인물 색인 ---------- */
+let peopleFilterChar = null;
+function renderPeopleFilters(){
+  const wrap = document.getElementById("people-filter");
+  const chars = [...new Set(PEOPLE.map(p=> chosung(p.name[0])).filter(Boolean))].sort();
+  wrap.innerHTML = "";
+  const allBtn = document.createElement("button");
+  allBtn.className = "chosung-btn" + (peopleFilterChar===null ? " active" : "");
+  allBtn.textContent = "전체";
+  allBtn.addEventListener("click", ()=>{ peopleFilterChar = null; renderPeopleFilters(); renderPeopleList(); });
+  wrap.appendChild(allBtn);
+  chars.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "chosung-btn" + (peopleFilterChar===c ? " active" : "");
+    b.textContent = c;
+    b.addEventListener("click", ()=>{ peopleFilterChar = c; renderPeopleFilters(); renderPeopleList(); });
+    wrap.appendChild(b);
+  });
+}
+
+function renderPeopleList(){
+  const q = document.getElementById("people-search").value.trim();
+  const wrap = document.getElementById("people-list");
+  let list = PEOPLE;
+  if(peopleFilterChar) list = list.filter(p=> chosung(p.name[0]) === peopleFilterChar);
+  if(q) list = list.filter(p=> p.name.includes(q) || p.summary.includes(q) || p.category.includes(q));
+  if(list.length===0){ wrap.innerHTML = '<div class="card"><div class="empty">해당하는 인물이 없습니다.</div></div>'; return; }
+  wrap.innerHTML = '<div class="card" id="people-rows"></div>';
+  const rowsWrap = document.getElementById("people-rows");
+  list.forEach(p=>{
+    const row = document.createElement("div");
+    row.className = "people-row";
+    row.innerHTML = `<div class="mini-avatar" style="background:linear-gradient(135deg,${p.color[0]},${p.color[1]});">${p.icon}</div>
+      <div><div style="font-weight:700;">${escapeHtml(p.name)}</div><div class="muted" style="font-size:.85em;">${escapeHtml(p.category)}</div></div>`;
+    row.addEventListener("click", ()=> openPersonDetail(p));
+    rowsWrap.appendChild(row);
+  });
+}
+document.getElementById("people-search").addEventListener("input", renderPeopleList);
+
+const personDialog = document.getElementById("person-dialog");
+function openPersonDetail(p){
+  const avatar = document.getElementById("person-avatar");
+  avatar.style.background = `linear-gradient(135deg,${p.color[0]},${p.color[1]})`;
+  avatar.textContent = p.icon;
+  setText("person-name", p.name);
+  setText("person-category", p.category);
+  setText("person-summary", p.summary);
+  setText("person-refs", "관련 본문: " + p.refs);
+  personDialog.showModal();
+}
+document.getElementById("person-close").addEventListener("click", ()=> personDialog.close());
+personDialog.addEventListener("click", (e)=>{ if(e.target === personDialog) personDialog.close(); });
+
+renderPeopleFilters();
+renderPeopleList();
 
 /* ---------- 시작 ---------- */
 applySettings();
