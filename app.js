@@ -64,7 +64,7 @@ let state = {
   uid: LS.get("uid", null),
   darkMode: LS.get("darkMode", window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches),
   fontScale: LS.get("fontScale", 1),
-  translation: LS.get("translation", "GAE"),
+  translation: LS.get("translation", "KRV"),
   planStart: LS.get("planStart", null), // Firebase 있으면 원격 값으로 덮어씀
   readDates: LS.get("readDates", {}),   // { "2026-09-19": "🙏" } 로컬 개인 기록(오프라인 대비)
   bookmarks: LS.get("bookmarks", []),
@@ -74,14 +74,15 @@ if(!state.uid){ state.uid = "u_"+Math.random().toString(36).slice(2)+Date.now().
 if(!state.planStart){ state.planStart = todayISO(); LS.set("planStart", state.planStart); }
 
 /* ---------- 성경 본문 API 어댑터 ----------
-   기본값으로 bolls.life 공개 API 형식을 사용합니다 (다국어/한국어 번역본 지원, 무료, 키 불필요).
-   이 세션 환경에서는 외부 네트워크 검증이 막혀 있어 번역본 코드(GAE)를 실제로 호출 확인하지
-   못했습니다. 실패 시 화면과 설정 > 디버그에 원인을 표시하니, 다른 코드로 바꿔가며 테스트해보세요. */
+   bolls.life 공개 API(무료, 키 불필요)를 사용합니다. 기본 번역본은 KRV(개역한글, 1961) —
+   bolls.life·YouVersion 등 여러 성경 서비스가 공통으로 쓰는 표준 약어입니다. 개역개정판은
+   저작권 문제로 무료 공개 API에서 거의 제공되지 않아 개역한글을 기본값으로 뒀습니다.
+   이 세션 환경은 외부 네트워크가 막혀 있어 실제 호출로 직접 검증하지는 못했으니, 배포 후
+   본문이 안 뜨면 설정 > 디버그의 오류 메시지를 확인하고 번역본 코드를 바꿔가며 테스트해주세요. */
 const BibleAPI = {
-  base: "https://bolls.life/api",
   async getChapter(translation, bookIdx, chapter){
     const bookId = bookIdx+1; // bolls.life 는 창세기=1 ... 요한계시록=66 순서를 사용
-    const url = `${this.base}/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
+    const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
     const res = await fetch(url);
     if(!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
     const data = await res.json();
@@ -89,7 +90,7 @@ const BibleAPI = {
     return data.map(v => ({ verse: v.verse ?? v.pk ?? "", text: (v.text||"").replace(/<[^>]+>/g,"") }));
   },
   async search(translation, query){
-    const url = `${this.base}/find/${encodeURIComponent(translation)}/?search=${encodeURIComponent(query)}&match_case=false&match_whole=false`;
+    const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=false`;
     const res = await fetch(url);
     if(!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
     const data = await res.json();
@@ -272,7 +273,7 @@ document.getElementById("nickname-save").addEventListener("click", async ()=>{
   toast("닉네임을 저장했습니다");
 });
 document.getElementById("bible-source-save").addEventListener("click", async ()=>{
-  state.translation = document.getElementById("bible-translation").value.trim() || "GAE";
+  state.translation = document.getElementById("bible-translation").value.trim() || "KRV";
   const newStart = document.getElementById("plan-start").value.trim();
   if(/^\d{4}-\d{2}-\d{2}$/.test(newStart)) state.planStart = newStart;
   LS.set("translation", state.translation);
