@@ -30,6 +30,19 @@ const PLAN = planSequence();
 
 const EMOJIS = ["🙏","👍","❤️","😊","🔥"];
 
+/* ---------- 유튜브 링크 → 영상ID / 썸네일 ---------- */
+function parseYouTubeId(url){
+  if(!url) return null;
+  const patterns = [
+    /youtu\.be\/([\w-]{11})/,
+    /[?&]v=([\w-]{11})/,
+    /youtube\.com\/embed\/([\w-]{11})/,
+    /youtube\.com\/shorts\/([\w-]{11})/,
+  ];
+  for(const re of patterns){ const m = url.match(re); if(m) return m[1]; }
+  return null;
+}
+
 /* ---------- 로컬 저장소 ---------- */
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("bible_app_"+k); return v===null? d : JSON.parse(v); }catch(e){ return d; } },
@@ -55,6 +68,7 @@ let state = {
   planStart: LS.get("planStart", null), // Firebase 있으면 원격 값으로 덮어씀
   readDates: LS.get("readDates", {}),   // { "2026-09-19": "🙏" } 로컬 개인 기록(오프라인 대비)
   bookmarks: LS.get("bookmarks", []),
+  todayVideoUrl: LS.get("todayVideoUrl", ""),
 };
 if(!state.uid){ state.uid = "u_"+Math.random().toString(36).slice(2)+Date.now().toString(36); LS.set("uid", state.uid); }
 if(!state.planStart){ state.planStart = todayISO(); LS.set("planStart", state.planStart); }
@@ -130,10 +144,42 @@ async function initFirebase(){
     document.getElementById("group-hint").style.display = "none";
     watchTodayReactions();
     watchRanking();
+    watchTodayVideo();
   }catch(err){
     console.error("Firebase 초기화 실패", err);
     setText("firebase-status", "Firebase 연결 실패: "+err.message+" (로컬 전용 모드로 계속)");
   }
+}
+
+function watchTodayVideo(){
+  const {doc, onSnapshot} = fb.mod;
+  onSnapshot(doc(fb.db,"config","video"), snap=>{
+    if(snap.exists()){
+      state.todayVideoUrl = snap.data().url || "";
+      LS.set("todayVideoUrl", state.todayVideoUrl);
+      document.getElementById("today-video-input").value = state.todayVideoUrl;
+      renderVideoCard();
+    }
+  }, err=> console.error("오늘의 영상 조회 실패", err));
+}
+
+async function saveTodayVideo(url){
+  state.todayVideoUrl = url;
+  LS.set("todayVideoUrl", url);
+  if(fb.ready){
+    const {doc, setDoc} = fb.mod;
+    await setDoc(doc(fb.db,"config","video"), { url, updatedAt: Date.now() }, {merge:true});
+  }
+  renderVideoCard();
+}
+
+function renderVideoCard(){
+  const card = document.getElementById("today-video-card");
+  const vid = parseYouTubeId(state.todayVideoUrl);
+  if(!vid){ card.style.display = "none"; return; }
+  card.href = state.todayVideoUrl;
+  document.getElementById("today-video-thumb").src = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+  card.style.display = "block";
 }
 
 async function pushReaction(dateISO, emoji){
@@ -194,13 +240,21 @@ function applySettings(){
   document.body.dataset.theme = state.darkMode ? "dark" : "light";
   document.documentElement.style.setProperty("--font-scale", state.fontScale);
   document.getElementById("toggle-dark").checked = state.darkMode;
+  document.getElementById("btn-theme-toggle").textContent = state.darkMode ? "☀️" : "🌙";
   document.getElementById("font-size-label").textContent = Math.round(state.fontScale*100)+"%";
   document.getElementById("nickname-input").value = state.nickname;
   document.getElementById("bible-translation").value = state.translation;
   document.getElementById("plan-start").value = state.planStart;
+  document.getElementById("today-video-input").value = state.todayVideoUrl;
 }
-document.getElementById("toggle-dark").addEventListener("change", e=>{
-  state.darkMode = e.target.checked; LS.set("darkMode", state.darkMode); applySettings();
+function setDarkMode(on){
+  state.darkMode = on; LS.set("darkMode", state.darkMode); applySettings();
+}
+document.getElementById("toggle-dark").addEventListener("change", e=> setDarkMode(e.target.checked));
+document.getElementById("btn-theme-toggle").addEventListener("click", ()=> setDarkMode(!state.darkMode));
+document.getElementById("today-video-save").addEventListener("click", ()=>{
+  saveTodayVideo(document.getElementById("today-video-input").value.trim());
+  toast("오늘의 영상 링크를 저장했습니다");
 });
 document.getElementById("font-plus").addEventListener("click", ()=>{
   state.fontScale = Math.min(1.4, +(state.fontScale+0.1).toFixed(2)); LS.set("fontScale", state.fontScale); applySettings();
@@ -246,6 +300,7 @@ async function renderToday(){
   setText("today-ref", `${entry.book} ${entry.chapter}장`);
   document.getElementById("plan-progress-bar").style.width = Math.round(((idx+1)/TOTAL_CHAPTERS)*100)+"%";
   setText("plan-progress-label", `전체 성경 통독 진행률 ${((idx+1)/TOTAL_CHAPTERS*100).toFixed(1)}%`);
+  renderVideoCard();
 
   const textEl = document.getElementById("today-text");
   const errEl = document.getElementById("today-error");
@@ -409,6 +464,13 @@ function renderRank(){
   setText("stat-total", myLocalStats.total);
   setText("stat-streak", myLocalStats.streak);
   setText("stat-month", myLocalStats.monthPct+"%");
+  const streakBadge = document.getElementById("header-streak");
+  if(myLocalStats.streak > 0){
+    streakBadge.style.display = "inline-block";
+    streakBadge.textContent = `🔥 ${myLocalStats.streak}일 연속`;
+  } else {
+    streakBadge.style.display = "none";
+  }
 
   const rankEmpty = document.getElementById("rank-empty");
   const rankTable = document.getElementById("rank-table");

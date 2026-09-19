@@ -4,105 +4,134 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>성경 읽기</title>
-<meta name="theme-color" content="#5b4636">
+<meta name="theme-color" content="#7c5cff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f7f3ee; --card:#ffffff; --text:#2b2420; --sub:#8a7f74;
-    --accent:#8a5a3b; --accent-weak:#f0e3d6; --border:#e7ddd0;
-    --danger:#c1543f; --shadow:0 2px 10px rgba(60,40,20,.08);
+    --bg:#f4f1ff; --bg-grad:linear-gradient(180deg,#fff0f6 0%,#f1efff 55%,#eef6ff 100%);
+    --card:#ffffff; --text:#3a2f57; --sub:#8b81a8;
+    --accent:#8b5cf6; --accent2:#ff8fab; --accent-weak:#efe7ff; --border:#e7defe;
+    --danger:#e0577a; --shadow:0 6px 16px rgba(139,92,246,.16);
+    --nav-shadow:0 -4px 16px rgba(139,92,246,.12);
     --font-scale:1;
   }
   [data-theme="dark"]{
-    --bg:#191512; --card:#241f1b; --text:#efe7dd; --sub:#a6988a;
-    --accent:#d9a66c; --accent-weak:#332920; --border:#3a322a;
-    --danger:#e07a63; --shadow:0 2px 10px rgba(0,0,0,.4);
+    --bg:#171029; --bg-grad:linear-gradient(180deg,#1c1333 0%,#171029 60%,#150f24 100%);
+    --card:#241a3d; --text:#efe9ff; --sub:#a99bd6;
+    --accent:#b794ff; --accent2:#ff9fc2; --accent-weak:#332654; --border:#3a2c5c;
+    --danger:#ff8fa3; --shadow:0 6px 18px rgba(0,0,0,.45);
+    --nav-shadow:0 -4px 18px rgba(0,0,0,.45);
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-    font-size:calc(16px * var(--font-scale));}
-  body{padding-bottom:72px;min-height:100vh;}
+  html,body{margin:0;padding:0;background:var(--bg-grad);color:var(--text);
+    font-family:"Gaegu","Apple SD Gothic Neo","Malgun Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:calc(17px * var(--font-scale));}
+  body{padding-bottom:80px;min-height:100vh;background-attachment:fixed;}
   a{color:inherit;}
-  header.top{position:sticky;top:0;z-index:10;background:var(--bg);
+  h1,h2,h3,strong,.btn,nav.bottom button,.badge{font-family:"Jua","Gaegu","Apple SD Gothic Neo",sans-serif;}
+  header.top{position:sticky;top:0;z-index:10;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));
     display:flex;align-items:center;justify-content:space-between;
-    padding:14px 16px 8px;border-bottom:1px solid var(--border);}
-  header.top h1{font-size:1.05em;margin:0;font-weight:700;}
-  header.top .icon-btn{background:none;border:none;color:var(--text);
-    font-size:1.2em;padding:6px;cursor:pointer;}
-  main{padding:12px 16px 24px;max-width:640px;margin:0 auto;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;
-    padding:16px;margin-bottom:14px;box-shadow:var(--shadow);}
+    padding:16px 16px 14px;border-radius:0 0 22px 22px;
+    box-shadow:0 4px 14px rgba(139,92,246,.35);}
+  header.top h1{font-size:1.15em;margin:0;font-weight:400;color:#fff;
+    display:flex;align-items:center;gap:8px;letter-spacing:.5px;
+    text-shadow:0 1px 0 rgba(0,0,0,.08);}
+  header.top .icon-btn{background:rgba(255,255,255,.25);border:none;color:#fff;
+    font-size:1.1em;padding:8px;border-radius:999px;cursor:pointer;line-height:1;
+    transition:transform .15s;}
+  header.top .icon-btn:active{transform:scale(.85);}
+  header.top .badge{background:rgba(255,255,255,.9);color:var(--accent);}
+  main{padding:14px 16px 24px;max-width:640px;margin:0 auto;}
+  .card{background:var(--card);border:2px solid var(--border);border-radius:22px;
+    padding:18px;margin-bottom:16px;box-shadow:var(--shadow);}
   .muted{color:var(--sub);font-size:.9em;}
   .row{display:flex;align-items:center;gap:8px;}
   .row.between{justify-content:space-between;}
   .row.wrap{flex-wrap:wrap;}
   button{font-family:inherit;}
-  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;
-    padding:10px 14px;font-size:.95em;cursor:pointer;}
-  .btn.ghost{background:var(--accent-weak);color:var(--accent);}
-  .btn.small{padding:6px 10px;font-size:.85em;border-radius:8px;}
-  .btn:disabled{opacity:.5;cursor:default;}
+  .btn{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;border:none;
+    border-radius:999px;padding:11px 18px;font-size:1em;cursor:pointer;
+    box-shadow:0 4px 0 rgba(0,0,0,.12);transition:transform .1s, box-shadow .1s;}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.12);}
+  .btn.ghost{background:var(--accent-weak);color:var(--accent);box-shadow:none;}
+  .btn.small{padding:7px 12px;font-size:.9em;}
+  .btn:disabled{opacity:.5;cursor:default;transform:none;}
   input[type="text"],textarea,select{
-    width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
-    border-radius:10px;padding:10px 12px;font-size:.95em;font-family:inherit;}
+    width:100%;background:var(--bg);border:2px solid var(--border);color:var(--text);
+    border-radius:14px;padding:11px 14px;font-size:.95em;font-family:inherit;}
+  input[type="text"]:focus,textarea:focus{outline:none;border-color:var(--accent);}
   textarea{resize:vertical;min-height:64px;}
-  h2.section-title{font-size:1em;color:var(--sub);margin:18px 0 8px;font-weight:600;}
-  .passage-ref{font-weight:700;font-size:1.15em;margin-bottom:2px;}
-  .plan-progress{height:6px;border-radius:4px;background:var(--accent-weak);overflow:hidden;margin:8px 0;}
-  .plan-progress > i{display:block;height:100%;background:var(--accent);}
-  .verse{margin:0 0 10px;line-height:1.7;}
+  h2.section-title{font-size:1.05em;color:var(--accent);margin:20px 0 8px;font-weight:400;}
+  .passage-ref{font-weight:400;font-size:1.3em;margin-bottom:2px;color:var(--accent);}
+  .plan-progress{height:14px;border-radius:999px;background:var(--accent-weak);overflow:hidden;margin:10px 0;
+    border:2px solid var(--border);}
+  .plan-progress > i{display:block;height:100%;border-radius:999px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s;}
+  .verse{margin:0 0 10px;line-height:1.8;border-radius:10px;transition:background .15s;}
+  .verse:active{background:var(--accent-weak);}
   .verse .vnum{color:var(--accent);font-weight:700;font-size:.8em;margin-right:4px;vertical-align:top;}
-  .verse.bookmarked{background:var(--accent-weak);border-radius:8px;padding:6px 8px;margin:0 -8px 10px;}
+  .verse.bookmarked{background:var(--accent-weak);border-radius:10px;padding:6px 8px;margin:0 -8px 10px;
+    box-shadow:inset 3px 0 0 var(--accent);}
   .verse-actions{display:none;gap:6px;margin:2px 0 8px;}
   .verse.active .verse-actions{display:flex;}
-  .emoji-row{display:flex;gap:6px;flex-wrap:wrap;}
-  .emoji-btn{font-size:1.3em;background:var(--bg);border:1px solid var(--border);
-    border-radius:999px;padding:6px 10px;cursor:pointer;line-height:1;}
-  .emoji-btn.picked{background:var(--accent-weak);border-color:var(--accent);}
+  .emoji-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .emoji-btn{font-size:1.5em;background:var(--bg);border:2px solid var(--border);
+    border-radius:999px;padding:6px 12px;cursor:pointer;line-height:1;transition:transform .12s;}
+  .emoji-btn:active{transform:scale(.85);}
+  .emoji-btn.picked{background:var(--accent-weak);border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-weak);transform:scale(1.1);}
   .reactor-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
-  .reactor-chip{background:var(--bg);border:1px solid var(--border);border-radius:999px;
-    padding:4px 10px;font-size:.85em;}
-  table.rank{width:100%;border-collapse:collapse;font-size:.92em;}
-  table.rank th, table.rank td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);}
+  .reactor-chip{background:var(--accent-weak);color:var(--accent);border:none;border-radius:999px;
+    padding:5px 12px;font-size:.85em;font-weight:600;}
+  table.rank{width:100%;border-collapse:collapse;font-size:.95em;}
+  table.rank th, table.rank td{text-align:left;padding:9px 6px;border-bottom:2px solid var(--border);}
   table.rank td.num{text-align:center;width:2em;color:var(--sub);}
-  table.rank tr.me{background:var(--accent-weak);}
-  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;}
-  .stat-grid .num{font-size:1.4em;font-weight:700;color:var(--accent);}
-  .stat-grid .label{font-size:.78em;color:var(--sub);}
-  .bookmark-item{border-bottom:1px solid var(--border);padding:10px 0;}
+  table.rank tr.me{background:var(--accent-weak);border-radius:10px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;}
+  .stat-grid .num{font-size:1.6em;font-weight:400;color:var(--accent);font-family:"Jua",sans-serif;}
+  .stat-grid .label{font-size:.8em;color:var(--sub);}
+  .bookmark-item{border-bottom:2px solid var(--border);padding:12px 0;}
   .bookmark-item:last-child{border-bottom:none;}
-  .bookmark-item .ref{font-weight:600;}
+  .bookmark-item .ref{font-weight:700;color:var(--accent);}
   .bookmark-item .note{margin-top:4px;font-size:.92em;color:var(--sub);white-space:pre-wrap;}
   nav.bottom{position:fixed;bottom:0;left:0;right:0;background:var(--card);
-    border-top:1px solid var(--border);display:flex;z-index:20;
+    border-radius:22px 22px 0 0;display:flex;z-index:20;box-shadow:var(--nav-shadow);
     padding-bottom:env(safe-area-inset-bottom);}
   nav.bottom button{flex:1;background:none;border:none;color:var(--sub);
     padding:10px 4px 8px;font-size:.72em;cursor:pointer;display:flex;flex-direction:column;
-    align-items:center;gap:2px;}
-  nav.bottom button .ico{font-size:1.3em;}
+    align-items:center;gap:3px;transition:transform .15s;}
+  nav.bottom button .ico{font-size:1.5em;transition:transform .15s;}
   nav.bottom button.active{color:var(--accent);font-weight:700;}
+  nav.bottom button.active .ico{transform:translateY(-4px) scale(1.15);}
   .tab{display:none;}
-  .tab.active{display:block;}
-  .empty{color:var(--sub);text-align:center;padding:28px 12px;font-size:.92em;}
-  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);
-    background:#2b2420;color:#fff;padding:10px 18px;border-radius:999px;font-size:.88em;
-    opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;}
-  .toast.show{opacity:.95;}
-  dialog{border:none;border-radius:14px;padding:0;max-width:360px;width:88vw;color:var(--text);background:var(--card);}
-  dialog::backdrop{background:rgba(0,0,0,.45);}
-  dialog .dlg-body{padding:18px;}
-  dialog h3{margin-top:0;}
-  .font-size-ctrl button{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);
+  .tab.active{display:block;animation:pop-in .25s ease;}
+  @keyframes pop-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .empty{color:var(--sub);text-align:center;padding:28px 12px;font-size:.95em;}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);
+    background:var(--accent);color:#fff;padding:10px 20px;border-radius:999px;font-size:.9em;
+    opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;box-shadow:var(--shadow);}
+  .toast.show{opacity:.97;}
+  dialog{border:none;border-radius:20px;padding:0;max-width:360px;width:88vw;color:var(--text);background:var(--card);}
+  dialog::backdrop{background:rgba(60,40,90,.45);}
+  dialog .dlg-body{padding:20px;}
+  dialog h3{margin-top:0;color:var(--accent);}
+  .font-size-ctrl button{width:36px;height:36px;border-radius:12px;border:2px solid var(--border);
     background:var(--bg);color:var(--text);font-weight:700;cursor:pointer;}
   .badge{display:inline-block;background:var(--accent-weak);color:var(--accent);
-    border-radius:999px;padding:2px 9px;font-size:.75em;font-weight:600;}
+    border-radius:999px;padding:3px 11px;font-size:.75em;font-weight:700;}
 </style>
 </head>
 <body data-theme="light">
 
 <header class="top">
-  <h1>📖 성경 읽기</h1>
-  <button class="icon-btn" id="btn-goto-settings" title="설정" aria-label="설정">⚙️</button>
+  <h1>📖 성경 읽기 <span id="header-streak" class="badge" style="display:none;"></span></h1>
+  <div class="row" style="gap:2px;">
+    <button class="icon-btn" id="btn-theme-toggle" title="다크모드 전환" aria-label="다크모드 전환">🌙</button>
+    <button class="icon-btn" id="btn-goto-settings" title="설정" aria-label="설정">⚙️</button>
+  </div>
 </header>
 
 <main>
@@ -120,6 +149,15 @@
       <div id="today-text" style="margin-top:12px;">본문을 불러오는 중입니다…</div>
       <div id="today-error" class="muted" style="display:none;color:var(--danger);"></div>
     </div>
+
+    <a class="card" id="today-video-card" href="#" target="_blank" rel="noopener"
+       style="display:none;padding:0;overflow:hidden;text-decoration:none;">
+      <img id="today-video-thumb" src="" alt="오늘의 영상 썸네일" style="display:block;width:100%;aspect-ratio:16/9;object-fit:cover;">
+      <div style="padding:10px 14px;">
+        <strong style="color:var(--text);">📺 오늘 함께 볼 영상</strong>
+        <div class="muted">눌러서 유튜브로 보기</div>
+      </div>
+    </a>
 
     <div class="card">
       <div class="row between">
@@ -143,9 +181,9 @@
     <h2 class="section-title">내 통계</h2>
     <div class="card">
       <div class="stat-grid">
-        <div><div class="num" id="stat-total">0</div><div class="label">총 읽은 날</div></div>
-        <div><div class="num" id="stat-streak">0</div><div class="label">연속 일수</div></div>
-        <div><div class="num" id="stat-month">0%</div><div class="label">이번달 참여율</div></div>
+        <div><div class="num" id="stat-total">0</div><div class="label">📚 총 읽은 날</div></div>
+        <div><div class="num" id="stat-streak">0</div><div class="label">🔥 연속 일수</div></div>
+        <div><div class="num" id="stat-month">0%</div><div class="label">🎯 이달 참여율</div></div>
       </div>
     </div>
     <h2 class="section-title">그룹 순위</h2>
@@ -207,6 +245,16 @@
       <div style="margin-top:6px;"><input type="text" id="plan-start" placeholder="YYYY-MM-DD"></div>
       <button class="btn small ghost" id="bible-source-save" style="margin-top:10px;">저장</button>
       <div class="muted" id="api-debug" style="margin-top:10px;white-space:pre-wrap;"></div>
+    </div>
+
+    <h2 class="section-title">오늘의 영상 (선택)</h2>
+    <div class="card">
+      <label class="muted" for="today-video-input">유튜브 링크 (매일 올라오는 영상 주소를 붙여넣으세요)</label>
+      <div class="row" style="margin-top:6px;">
+        <input type="text" id="today-video-input" placeholder="https://youtu.be/영상ID">
+        <button class="btn small" id="today-video-save">저장</button>
+      </div>
+      <p class="muted" style="margin-top:8px;">Firebase가 연결되어 있으면 그룹 전체 화면에 공유되고, 아니면 내 기기에만 표시됩니다.</p>
     </div>
 
     <h2 class="section-title">그룹 기능 (Firebase)</h2>
