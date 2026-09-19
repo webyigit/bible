@@ -1859,35 +1859,62 @@ function renderPeopleList(){
 document.getElementById("people-search").addEventListener("input", renderPeopleList);
 
 const personDialog = document.getElementById("person-dialog");
-/* "누가복음 3장", "출애굽기 19~20장", "룻기"(장 없음) 같은 refs 문자열에서
-   맨 앞에 나오는 책 이름과 시작 장 번호만 뽑는다. 장이 없으면 null. */
-function parseFirstChapterRef(refsStr){
-  if(!refsStr) return null;
-  const seg = refsStr.split(",")[0].trim();
-  const m = seg.match(/^([가-힣]+)\s*(\d+)/);
-  if(!m) return null;
-  const bookIdx = BOOKS.findIndex(b => b[0] === m[1]);
-  if(bookIdx === -1) return null;
-  return { bookIdx, chapter: parseInt(m[2], 10), bookName: m[1] };
+/* "마태복음 4장, 8장, 마가복음 1~2장"처럼 쉼표로 나열된 refs 문자열에서
+   장을 특정할 수 있는 부분을 전부 뽑는다. 책 이름 없이 "8장"만 있으면
+   바로 앞에 나온 책이 이어지는 것으로 본다. 책 이름만 있거나(장 없음)
+   "사무엘상~열왕기상"처럼 책 자체가 범위인 경우는 장을 특정할 수 없어
+   건너뛰고 unparsed에 원문 그대로 남긴다. */
+function parseAllChapterRefs(refsStr){
+  const chapters = [], unparsed = [];
+  if(!refsStr) return { chapters, unparsed };
+  let curBookIdx = null, curBookName = null;
+  refsStr.split(",").map(s=>s.trim()).filter(Boolean).forEach(seg=>{
+    let m = seg.match(/^([가-힣]+)\s*(\d+)(?:[~-](\d+))?\s*장?$/);
+    if(m){
+      const bookIdx = BOOKS.findIndex(b=> b[0] === m[1]);
+      if(bookIdx !== -1){
+        curBookIdx = bookIdx; curBookName = m[1];
+        const from = parseInt(m[2],10), to = m[3] ? parseInt(m[3],10) : from;
+        for(let c=from; c<=to; c++) chapters.push({bookIdx, chapter:c, bookName:m[1]});
+        return;
+      }
+    }
+    m = seg.match(/^(\d+)(?:[~-](\d+))?\s*장$/);
+    if(m && curBookIdx !== null){
+      const from = parseInt(m[1],10), to = m[2] ? parseInt(m[2],10) : from;
+      for(let c=from; c<=to; c++) chapters.push({bookIdx:curBookIdx, chapter:c, bookName:curBookName});
+      return;
+    }
+    unparsed.push(seg);
+  });
+  return { chapters, unparsed };
 }
 
-/* 인물/장소 상세 다이얼로그의 "관련 본문" 아래에 실제 본문(첫 인용 장)을 미리보기로 */
+/* 인물/장소 상세 다이얼로그의 "관련 본문" 아래에 실제 본문을 미리보기로 —
+   장을 특정할 수 있는 인용은 전부 보여준다(첫 번째 것만이 아니라). */
 async function renderVersePreview(containerId, refsStr){
   const box = document.getElementById(containerId);
-  const ref = parseFirstChapterRef(refsStr);
-  if(!ref){
-    box.innerHTML = `<div class="vp-title">본문 미리보기</div><div class="muted">인용된 장이 여러 곳이거나 특정 장이 없어 여기서는 보여드릴 수 없어요. 위 관련 본문을 성경 본문 검색에서 직접 찾아보세요.</div>`;
+  const { chapters, unparsed } = parseAllChapterRefs(refsStr);
+  if(chapters.length === 0){
+    box.innerHTML = `<div class="vp-title">본문 미리보기</div><div class="muted">인용된 장을 특정할 수 없어 여기서는 보여드릴 수 없어요. 위 관련 본문을 성경 본문 검색에서 직접 찾아보세요.</div>`;
     return;
   }
-  box.innerHTML = `<div class="vp-title">${escapeHtml(ref.bookName)} ${ref.chapter}장 미리보기</div><div class="muted">불러오는 중…</div>`;
-  try{
-    const verses = await BibleAPI.getChapter(state.translation, ref.bookIdx, ref.chapter);
-    box.innerHTML = `<div class="vp-title">${escapeHtml(ref.bookName)} ${ref.chapter}장</div>` +
-      verses.map(v => `<div class="vp-verse"><span class="vp-num">${v.verse}</span>${escapeHtml(v.text)}</div>`).join("");
-  }catch(err){
-    console.error(err);
-    box.innerHTML = `<div class="vp-title">${escapeHtml(ref.bookName)} ${ref.chapter}장</div><div class="muted">본문을 불러오지 못했습니다.</div>`;
+  box.innerHTML = `<div class="vp-title">본문 미리보기</div><div class="muted">불러오는 중…</div>`;
+  const results = await Promise.allSettled(
+    chapters.map(c => BibleAPI.getChapter(state.translation, c.bookIdx, c.chapter))
+  );
+  let html = `<div class="vp-title">본문 미리보기</div>`;
+  results.forEach((r, i)=>{
+    const c = chapters[i];
+    html += `<div style="font-weight:700;margin-top:${i?12:0}px;margin-bottom:4px;">${escapeHtml(c.bookName)} ${c.chapter}장</div>`;
+    html += r.status === "fulfilled"
+      ? r.value.map(v => `<div class="vp-verse"><span class="vp-num">${v.verse}</span>${escapeHtml(v.text)}</div>`).join("")
+      : `<div class="muted">본문을 불러오지 못했습니다.</div>`;
+  });
+  if(unparsed.length){
+    html += `<div class="muted" style="margin-top:12px;font-size:.85em;">그 외 참고 본문: ${escapeHtml(unparsed.join(", "))}</div>`;
   }
+  box.innerHTML = html;
 }
 
 function openPersonDetail(p){
