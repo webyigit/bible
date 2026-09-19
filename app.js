@@ -1945,6 +1945,11 @@ function openPersonDetail(p){
 document.getElementById("person-close").addEventListener("click", ()=> personDialog.close());
 personDialog.addEventListener("click", (e)=>{ if(e.target === personDialog) personDialog.close(); });
 
+setText("people-criteria-note",
+  `성경에는 이름이 나오는 사람이 1,000명이 넘지만, 이 색인에는 그중 실제 사건이나 ` +
+  `행적이 본문에 남아있는 인물만 ${PEOPLE.length}명 골라 담았습니다. 족보에만 이름이 ` +
+  `나오는("OO가 OO를 낳고") 인물은 넣지 않았어요.`);
+
 renderPeopleCategoryFilter();
 renderPeopleFilters();
 renderPeopleList();
