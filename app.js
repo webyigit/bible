@@ -226,6 +226,105 @@ const PEOPLE = [
     refs:"누가복음, 사도행전, 골로새서 4장"},
 ];
 
+/* ---------- 성경 장소 색인 ----------
+   여러 성경 지명 사전에서 공통으로 확인되는 위치·역할 정도만 담았고, 정확한
+   현대 좌표나 특정 학설처럼 논쟁적인 내용은 넣지 않았다. */
+const PLACES = [
+  {name:"예루살렘", category:"도시", icon:"🏛️", color:["#e0b04c","#8b5cf6"],
+    summary:"유다 산지에 있는 성으로, 다윗이 정복해 이스라엘의 수도로 삼았고 이후 솔로몬이 성전을 세웠다. 예수가 십자가에 못박히고 부활한 곳이며, 구약과 신약을 통틀어 가장 자주 등장하는 도시다.",
+    refs:"사무엘하 5장, 열왕기상 6~8장, 마태복음 21~28장"},
+  {name:"베들레헴", category:"도시", icon:"⭐", color:["#e0b04c","#4a8f4a"],
+    summary:"예루살렘 남쪽의 작은 마을로, 다윗의 고향(에브라다)이며 미가서의 예언대로 예수가 태어난 곳이다.",
+    refs:"룻기, 미가 5장, 마태복음 2장, 누가복음 2장"},
+  {name:"나사렛", category:"도시", icon:"🏡", color:["#7fb3d5","#4a7fa5"],
+    summary:"갈릴리 지방의 마을로, 예수가 어린 시절을 보낸 고향이다. 구약에는 언급이 없을 만큼 작은 동네였다.",
+    refs:"마태복음 2장, 누가복음 1~2장, 4장"},
+  {name:"가버나움", category:"도시", icon:"⛵", color:["#4dd4ff","#5e7bff"],
+    summary:"갈릴리 호수 북쪽 연안의 마을로, 예수가 공생애 동안 활동 거점으로 삼았다. 베드로의 집이 있던 곳으로 전해진다.",
+    refs:"마태복음 4장, 8장, 마가복음 1~2장"},
+  {name:"여리고", category:"도시", icon:"🧱", color:["#ffb199","#e0577a"],
+    summary:"요단강 서쪽의 오래된 성읍으로, 여호수아가 이끄는 이스라엘이 가나안 정착 초기에 정복했다. 예수 시대에는 삭개오를 만난 곳, 맹인을 고친 곳으로 등장한다.",
+    refs:"여호수아 6장, 누가복음 19장"},
+  {name:"갈릴리", category:"지역", icon:"🌄", color:["#7dff8f","#4a8f4a"],
+    summary:"이스라엘 북부의 지방으로, 예수가 자라고 사역 대부분을 펼친 무대다. 나사렛·가버나움·가나 등이 이 지역에 속한다.",
+    refs:"마태복음 4장, 누가복음 4장"},
+  {name:"갈릴리 호수", category:"강·호수", icon:"🌊", color:["#4dd4ff","#5e7bff"],
+    summary:"게네사렛 호수, 디베랴 바다로도 불리는 갈릴리 지방의 담수호. 예수가 풍랑을 잠잠케 하고 물 위를 걸었으며, 여러 제자가 이 호수에서 어부로 살았다.",
+    refs:"마태복음 4장, 8장, 14장"},
+  {name:"사해", category:"강·호수", icon:"🧂", color:["#ffe15e","#ff9d5e"],
+    summary:"염분 농도가 매우 높아 생물이 거의 살지 못하는 호수로, 이스라엘과 요르단 사이 저지대에 있다. 요단강이 흘러드는 종착점이며, 인근에 소돔과 고모라가 있었다고 전해진다.",
+    refs:"창세기 14장, 19장"},
+  {name:"요단강", category:"강·호수", icon:"💧", color:["#4dd4ff","#7dff8f"],
+    summary:"갈릴리 호수에서 사해로 흐르는 강으로, 여호수아 때 이스라엘 백성이 가나안 땅에 들어가며 건넜다. 예수가 세례 요한에게 세례를 받은 곳이기도 하다.",
+    refs:"여호수아 3장, 마태복음 3장"},
+  {name:"감람산", category:"산", icon:"🫒", color:["#7dff8f","#c8ff5e"],
+    summary:"올리브산이라고도 하며, 예루살렘 동쪽에 있는 언덕이다. 예수가 자주 기도하러 올랐고, 겟세마네 동산이 이 산자락에 있으며, 승천한 곳으로 기록된다.",
+    refs:"누가복음 22장, 사도행전 1장"},
+  {name:"시내산", category:"산", icon:"⛰️", color:["#d16bff","#ff6bd8"],
+    summary:"모세가 하나님께 십계명을 받은 산으로, 출애굽한 이스라엘 백성이 광야 여정 중 도착해 오래 머물렀다.",
+    refs:"출애굽기 19~20장"},
+  {name:"애굽", category:"나라", icon:"🐫", color:["#ffd166","#ff9d5e"],
+    summary:"요셉이 총리가 되어 형제들을 불러들인 나라이자, 훗날 이스라엘 백성이 노예 생활을 하다 모세를 통해 탈출한 나라다. 헤롯을 피해 아기 예수 가족이 잠시 피신한 곳이기도 하다.",
+    refs:"창세기 37~50장, 출애굽기 1~14장, 마태복음 2장"},
+  {name:"바벨론", category:"나라", icon:"🏯", color:["#c8a2ff","#8b5cf6"],
+    summary:"신바벨론 제국의 수도로, 유다가 멸망한 뒤 다니엘을 비롯한 많은 백성이 포로로 끌려간 곳이다.",
+    refs:"열왕기하 25장, 다니엘 1장"},
+  {name:"앗수르", category:"나라", icon:"⚔️", color:["#ff6b6b","#c15e5e"],
+    summary:"북이스라엘을 정복해 멸망시킨 제국으로, 요나가 회개를 선포하러 간 니느웨가 이 제국의 수도였다.",
+    refs:"열왕기하 17장, 요나서"},
+  {name:"페르시아", category:"나라", icon:"👑", color:["#ffe15e","#e0b04c"],
+    summary:"바벨론을 무너뜨린 뒤 고레스 왕의 칙령으로 포로로 끌려갔던 유대인들의 귀환과 성전 재건을 허락한 제국. 에스더서의 배경이다.",
+    refs:"에스라 1장, 에스더서"},
+  {name:"가나안", category:"지역", icon:"🗺️", color:["#7dff8f","#4dd4ff"],
+    summary:"하나님이 아브라함과 그 후손에게 주겠다고 약속하신 땅으로, 훗날 이스라엘 열두 지파가 정착했다.",
+    refs:"창세기 12장, 여호수아 11~21장"},
+  {name:"다메섹", category:"도시", icon:"🏙️", color:["#4dd4ff","#5e7bff"],
+    summary:"시리아 지역의 오래된 도시로, 사울(바울)이 그리스도인을 잡으러 가던 길에 부활한 예수를 만나 회심한 곳이다.",
+    refs:"사도행전 9장"},
+  {name:"안디옥", category:"도시", icon:"🕊️", color:["#ffb199","#e0577a"],
+    summary:"시리아 지역의 도시로, 예수를 믿는 사람들이 처음으로 '그리스도인'이라 불리기 시작한 곳이며 바울 선교 여행의 출발 기지였다.",
+    refs:"사도행전 11장, 13장"},
+  {name:"에베소", category:"도시", icon:"🏺", color:["#7fb3d5","#4a7fa5"],
+    summary:"소아시아(지금의 튀르키예)의 항구 도시로, 바울이 오래 머물며 사역했다. 바울이 이 도시의 교회에 보낸 편지가 에베소서다.",
+    refs:"사도행전 19장, 에베소서"},
+  {name:"빌립보", category:"도시", icon:"🏟️", color:["#d16bff","#ff6bd8"],
+    summary:"마케도니아(그리스 북부)의 로마 식민 도시로, 바울이 유럽 땅에서 처음 교회를 세운 곳이다.",
+    refs:"사도행전 16장, 빌립보서"},
+  {name:"고린도", category:"도시", icon:"⚓", color:["#4dd4ff","#7dff8f"],
+    summary:"그리스의 상업 항구 도시로, 바울이 오래 머물며 사역했다. 문제가 많았던 이 교회에 보낸 편지가 고린도전후서다.",
+    refs:"사도행전 18장, 고린도전후서"},
+  {name:"로마", category:"나라", icon:"🏟️", color:["#ff6b6b","#ffd166"],
+    summary:"로마 제국의 수도로, 바울이 재판을 받기 위해 압송되어 마지막까지 머물며 복음을 전했다.",
+    refs:"사도행전 28장, 로마서"},
+  {name:"아덴", category:"도시", icon:"🏛️", color:["#ffffff","#bfe9ff"],
+    summary:"그리스 철학의 중심지 아테네로, 바울이 아레오바고 언덕에서 알지 못하는 신에 대해 설교했다.",
+    refs:"사도행전 17장"},
+  {name:"소돔과 고모라", category:"도시", icon:"🔥", color:["#ff6b6b","#8b5cf6"],
+    summary:"사해 부근에 있었던 것으로 전해지는 두 성읍으로, 죄악이 가득해 하나님의 심판으로 멸망했다. 롯의 가족이 탈출했다.",
+    refs:"창세기 18~19장"},
+  {name:"브엘세바", category:"도시", icon:"🏕️", color:["#ffe15e","#ff9d5e"],
+    summary:"가나안 남쪽 경계의 성읍으로, 아브라함과 이삭이 우물을 파고 머물렀던 곳이다.",
+    refs:"창세기 21장, 26장"},
+  {name:"헤브론", category:"도시", icon:"🕳️", color:["#e0b04c","#8b5cf6"],
+    summary:"아브라함이 막벨라 굴을 사서 사라를 장사한 곳이며, 다윗이 처음 유다의 왕으로 기름부음을 받은 도시다.",
+    refs:"창세기 23장, 사무엘하 2장"},
+  {name:"실로", category:"도시", icon:"⛺", color:["#7dff8f","#c8ff5e"],
+    summary:"가나안 정착 초기에 성막(회막)이 오랫동안 세워져 있던 곳으로, 사사 시대 이스라엘 예배의 중심지였다.",
+    refs:"여호수아 18장, 사무엘상 1~4장"},
+  {name:"사마리아", category:"지역", icon:"🏞️", color:["#d16bff","#ff6bd8"],
+    summary:"북이스라엘의 수도였던 도시이자 그 일대 지역의 이름으로, 예수 시대에는 유대인과 사마리아인 사이의 갈등의 배경이 되었다(수가성 우물가의 여인 이야기).",
+    refs:"열왕기상 16장, 요한복음 4장"},
+  {name:"모압", category:"나라", icon:"🌾", color:["#e0b04c","#4a8f4a"],
+    summary:"사해 동쪽에 있던 나라로, 룻의 고향이며 이스라엘과 여러 차례 대립했다.",
+    refs:"룻기, 민수기 22장"},
+  {name:"블레셋", category:"지역", icon:"🛡️", color:["#ff6b6b","#c15e5e"],
+    summary:"지중해 연안 지역에 살던 민족으로, 삼손과 다윗·골리앗 이야기 등 이스라엘과 잦은 전쟁을 벌인 배경이 된다.",
+    refs:"사사기 13~16장, 사무엘상 17장"},
+  {name:"니느웨", category:"도시", icon:"🐟", color:["#4dd4ff","#5e7bff"],
+    summary:"앗수르 제국의 수도로, 요나가 하나님의 명령을 피해 도망갔다가 결국 가서 회개를 선포한 곳이다.",
+    refs:"요나서"},
+];
+
 function chosung(ch){
   const code = (ch||"").charCodeAt(0) - 0xAC00;
   if(code < 0 || code > 11171) return null;
@@ -406,11 +505,17 @@ const BibleAPI = {
     const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=false`;
     const data = await this._fetchJson(url);
     const list = Array.isArray(data) ? data : (data.results||[]);
-    const result = list.map(v => ({
-      bookIdx: (v.book ?? v.book_id ?? 1)-1,
-      chapter: v.chapter, verse: v.verse,
-      text: (v.text||"").replace(/<[^>]+>/g,"")
-    }));
+    // API가 검색어를 단어 단위로 느슨하게 매칭해, 단어 하나만 우연히 겹쳐도
+    // (예: "술 마시지 마라" → 지명 "마라"만 있는 구절) 결과에 섞여 나온다.
+    // 검색어를 이루는 단어가 전부 실제로 포함된 구절만 남긴다.
+    const tokens = query.trim().split(/\s+/).filter(Boolean);
+    const result = list
+      .map(v => ({
+        bookIdx: (v.book ?? v.book_id ?? 1)-1,
+        chapter: v.chapter, verse: v.verse,
+        text: (v.text||"").replace(/<[^>]+>/g,"")
+      }))
+      .filter(v => tokens.every(t => v.text.toLowerCase().includes(t.toLowerCase())));
     this._searchCache.set(cacheKey, result);
     return result;
   }
@@ -805,7 +910,7 @@ function renderEmojiPicker(pickedEmoji){
   });
 }
 
-/* 실제 불꽃놀이처럼: 로켓이 아래에서 솟아올라 정점에서 사방으로 반짝이며 터진다 */
+/* 실제 불꽃놀이처럼: 화면 정중앙에서 한 번에 터져 화면 전체로 천천히 퍼졌다가 서서히 사라진다 */
 function spawnConfetti(){
   const canvas = document.createElement("canvas");
   canvas.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;";
@@ -816,72 +921,52 @@ function spawnConfetti(){
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
 
-  const GRAVITY = 0.05;
+  const GRAVITY = 0.022;
+  const FRICTION = 0.992;
   const PALETTES = [
     ["#ff6b6b","#ffd166"], ["#4dd4ff","#5e7bff"], ["#d16bff","#ff6bd8"],
     ["#7dff8f","#c8ff5e"], ["#ffe15e","#ff9d5e"], ["#ffffff","#bfe9ff"]
   ];
 
-  let rockets = [], sparks = [];
+  const cx = W/2, cy = H/2;
+  const maxDist = Math.hypot(W,H)/2 + 30;
 
-  function launchRocket(){
-    const x = W*(0.18+Math.random()*0.64);
-    rockets.push({
-      x, y: H+20, targetY: H*(0.16+Math.random()*0.34),
-      vy: -(7.5+Math.random()*2.2), trail: []
-    });
-  }
-  const burstCount = 4 + Math.floor(Math.random()*2);
-  for(let i=0;i<burstCount;i++) setTimeout(launchRocket, i*(260+Math.random()*260));
+  let sparks = [];
 
-  function explode(x,y){
-    const [c1,c2] = PALETTES[Math.floor(Math.random()*PALETTES.length)];
-    const n = 60 + Math.floor(Math.random()*35);
-    for(let i=0;i<n;i++){
-      const angle = (Math.PI*2*i)/n + (Math.random()-0.5)*0.15;
-      const speed = 1.8 + Math.random()*4.2;
-      sparks.push({
-        x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-        color: Math.random()<0.5?c1:c2, life: 1,
-        decay: 0.010 + Math.random()*0.012, trail: [],
-        twinkle: Math.random()<0.35
-      });
-    }
+  function burst(colors, delay){
+    setTimeout(()=>{
+      const n = 90 + Math.floor(Math.random()*40);
+      for(let i=0;i<n;i++){
+        const angle = (Math.PI*2*i)/n + Math.random()*0.3;
+        const speed = (maxDist/125) * (0.45+Math.random()*0.75);
+        sparks.push({
+          x: cx, y: cy, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+          color: colors[i%colors.length], life: 1,
+          decay: 0.005 + Math.random()*0.006, trail: [],
+          twinkle: Math.random()<0.35
+        });
+      }
+    }, delay);
   }
+
+  // 색이 다른 팔레트 2~3개를 살짝 시차를 두고 같은 중심에서 터뜨려 화면 전체를 채운다
+  const shuffled = [...PALETTES].sort(()=>Math.random()-0.5);
+  const layerCount = 2 + Math.floor(Math.random()*2);
+  for(let i=0;i<layerCount;i++) burst(shuffled[i], i*120);
 
   const startTime = performance.now();
-  const maxDuration = 3400;
+  const maxDuration = 4200;
 
   function frame(now){
     const t = now - startTime;
     ctx.clearRect(0,0,W,H);
     ctx.lineCap = "round";
 
-    rockets.forEach(r=>{
-      r.trail.push({x:r.x,y:r.y});
-      if(r.trail.length>8) r.trail.shift();
-      r.y += r.vy;
-      r.vy += GRAVITY*0.4;
-      for(let i=1;i<r.trail.length;i++){
-        const a = i/r.trail.length;
-        ctx.strokeStyle = `rgba(255,238,180,${a*0.8})`;
-        ctx.lineWidth = 2*a;
-        ctx.beginPath();
-        ctx.moveTo(r.trail[i-1].x, r.trail[i-1].y);
-        ctx.lineTo(r.trail[i].x, r.trail[i].y);
-        ctx.stroke();
-      }
-    });
-    rockets = rockets.filter(r=>{
-      if(r.y <= r.targetY || r.vy >= 0){ explode(r.x, r.y); return false; }
-      return true;
-    });
-
     sparks.forEach(s=>{
       s.trail.push({x:s.x, y:s.y});
-      if(s.trail.length>5) s.trail.shift();
+      if(s.trail.length>6) s.trail.shift();
       s.vy += GRAVITY;
-      s.vx *= 0.985; s.vy *= 0.985;
+      s.vx *= FRICTION; s.vy *= FRICTION;
       s.x += s.vx; s.y += s.vy;
       s.life -= s.decay;
     });
@@ -908,7 +993,7 @@ function spawnConfetti(){
       ctx.shadowBlur = 0;
     });
 
-    if(t < maxDuration || rockets.length || sparks.length){
+    if(t < maxDuration || sparks.length){
       requestAnimationFrame(frame);
     } else {
       canvas.remove();
@@ -1315,7 +1400,7 @@ async function doSearch(){
   }
 }
 
-/* ---------- 검색 탭: 본문 검색 / 인물 검색 전환 ---------- */
+/* ---------- 검색 탭: 본문 검색 / 인물 / 장소 전환 ---------- */
 document.querySelectorAll("#search-mode-seg .seg-btn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const mode = btn.dataset.searchMode;
@@ -1324,27 +1409,35 @@ document.querySelectorAll("#search-mode-seg .seg-btn").forEach(btn=>{
     });
     document.getElementById("search-mode-text").style.display = mode === "text" ? "block" : "none";
     document.getElementById("search-mode-people").style.display = mode === "people" ? "block" : "none";
+    document.getElementById("search-mode-places").style.display = mode === "places" ? "block" : "none";
   });
 });
 document.querySelector('#search-mode-seg .seg-btn[data-search-mode="text"]').classList.add("active");
 
+/* 초성별 인원/개수를 괄호로 표기한 색인 필터 버튼을 그린다 (인물·장소 색인 공용) */
+function renderChosungFilter(wrap, items, getName, selectedChar, onSelect){
+  const chars = [...new Set(items.map(it=> chosung(getName(it)[0])).filter(Boolean))].sort();
+  wrap.innerHTML = "";
+  const allBtn = document.createElement("button");
+  allBtn.className = "chosung-btn" + (selectedChar===null ? " active" : "");
+  allBtn.textContent = `전체 (${items.length})`;
+  allBtn.addEventListener("click", ()=> onSelect(null));
+  wrap.appendChild(allBtn);
+  chars.forEach(c=>{
+    const count = items.filter(it=> chosung(getName(it)[0]) === c).length;
+    const b = document.createElement("button");
+    b.className = "chosung-btn" + (selectedChar===c ? " active" : "");
+    b.textContent = `${c} (${count})`;
+    b.addEventListener("click", ()=> onSelect(c));
+    wrap.appendChild(b);
+  });
+}
+
 /* ---------- 성경 인물 색인 ---------- */
 let peopleFilterChar = null;
 function renderPeopleFilters(){
-  const wrap = document.getElementById("people-filter");
-  const chars = [...new Set(PEOPLE.map(p=> chosung(p.name[0])).filter(Boolean))].sort();
-  wrap.innerHTML = "";
-  const allBtn = document.createElement("button");
-  allBtn.className = "chosung-btn" + (peopleFilterChar===null ? " active" : "");
-  allBtn.textContent = "전체";
-  allBtn.addEventListener("click", ()=>{ peopleFilterChar = null; renderPeopleFilters(); renderPeopleList(); });
-  wrap.appendChild(allBtn);
-  chars.forEach(c=>{
-    const b = document.createElement("button");
-    b.className = "chosung-btn" + (peopleFilterChar===c ? " active" : "");
-    b.textContent = c;
-    b.addEventListener("click", ()=>{ peopleFilterChar = c; renderPeopleFilters(); renderPeopleList(); });
-    wrap.appendChild(b);
+  renderChosungFilter(document.getElementById("people-filter"), PEOPLE, p=>p.name, peopleFilterChar, c=>{
+    peopleFilterChar = c; renderPeopleFilters(); renderPeopleList();
   });
 }
 
@@ -1385,6 +1478,55 @@ personDialog.addEventListener("click", (e)=>{ if(e.target === personDialog) pers
 
 renderPeopleFilters();
 renderPeopleList();
+
+/* ---------- 성경 장소 색인 ---------- */
+let placesFilterChar = null;
+function renderPlacesFilters(){
+  renderChosungFilter(document.getElementById("places-filter"), PLACES, pl=>pl.name, placesFilterChar, c=>{
+    placesFilterChar = c; renderPlacesFilters(); renderPlacesList();
+  });
+}
+
+function renderPlacesList(){
+  const q = document.getElementById("places-search").value.trim();
+  const wrap = document.getElementById("places-list");
+  let list = PLACES;
+  if(placesFilterChar) list = list.filter(pl=> chosung(pl.name[0]) === placesFilterChar);
+  if(q) list = list.filter(pl=> pl.name.includes(q) || pl.summary.includes(q) || pl.category.includes(q));
+  if(list.length===0){ wrap.innerHTML = '<div class="card"><div class="empty">해당하는 장소가 없습니다.</div></div>'; return; }
+  wrap.innerHTML = '<div class="card" id="places-rows"></div>';
+  const rowsWrap = document.getElementById("places-rows");
+  list.forEach(pl=>{
+    const row = document.createElement("div");
+    row.className = "people-row";
+    row.innerHTML = `<div class="mini-avatar" style="background:linear-gradient(135deg, ${pl.color[0]}, ${pl.color[1]});display:flex;align-items:center;justify-content:center;font-size:22px;">${pl.icon}</div>
+      <div><div style="font-weight:700;">${escapeHtml(pl.name)}</div><div class="muted" style="font-size:.85em;">${escapeHtml(pl.category)}</div></div>`;
+    row.addEventListener("click", ()=> openPlaceDetail(pl));
+    rowsWrap.appendChild(row);
+  });
+}
+document.getElementById("places-search").addEventListener("input", renderPlacesList);
+
+const placeDialog = document.getElementById("place-dialog");
+function openPlaceDetail(pl){
+  const avatar = document.getElementById("place-avatar");
+  avatar.style.background = `linear-gradient(135deg, ${pl.color[0]}, ${pl.color[1]})`;
+  avatar.style.display = "flex";
+  avatar.style.alignItems = "center";
+  avatar.style.justifyContent = "center";
+  avatar.style.fontSize = "48px";
+  avatar.textContent = pl.icon;
+  setText("place-name", pl.name);
+  setText("place-category", pl.category);
+  setText("place-summary", pl.summary);
+  setText("place-refs", "관련 본문: " + pl.refs);
+  placeDialog.showModal();
+}
+document.getElementById("place-close").addEventListener("click", ()=> placeDialog.close());
+placeDialog.addEventListener("click", (e)=>{ if(e.target === placeDialog) placeDialog.close(); });
+
+renderPlacesFilters();
+renderPlacesList();
 
 /* ---------- 시작 ---------- */
 applySettings();
