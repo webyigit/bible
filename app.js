@@ -75,6 +75,50 @@ function pickApplicationPrompt(bookIdx, chapter, verse){
   return VERSE_APPLICATION_PROMPTS[idx];
 }
 
+/* 질문만으로는 막막할 수 있어, 참고할 만한 생각 한 조각과 실천 항목을
+   덧붙인다. 구절에 특정 주제어가 실제로 들어있으면 그 주제에 맞는 것을
+   쓰고(본문에 진짜 있는 단어에 근거하므로 지어낸 해석이 아니다), 없으면
+   구절 번호로 결정론적으로 고른 범용 항목을 쓴다. 어느 쪽이든 "이 구절의
+   정답"이 아니라 하나의 예시로만 제시한다. */
+const THEME_APPLICATIONS = [
+  {keyword:"사랑", thought:"이 말씀에는 '사랑'이라는 주제가 담겨 있어요. 오늘 그 사랑을 누구에게 흘려보낼 수 있을지 생각해보세요.", action:"오늘 만나는 사람 한 명에게 작은 친절이나 사랑을 표현해보세요."},
+  {keyword:"감사", thought:"이 구절은 감사할 이유를 떠올리게 합니다.", action:"오늘 감사한 일 세 가지를 적어보세요."},
+  {keyword:"기도", thought:"이 말씀은 기도로 이어질 수 있는 구절이에요.", action:"지금 잠깐 이 말씀을 붙들고 짧게 기도해보세요."},
+  {keyword:"용서", thought:"이 구절은 용서에 대해 생각해보게 합니다.", action:"마음에 담아둔 사람이 있다면 오늘 용서하기로 결단해보세요."},
+  {keyword:"순종", thought:"이 말씀은 순종이라는 주제를 담고 있어요.", action:"미뤄왔던 일 중 오늘 하나만 실천해보세요."},
+  {keyword:"인내", thought:"이 구절은 인내를 이야기합니다.", action:"오늘 참기 힘든 상황이 오면 이 말씀을 떠올려보세요."},
+  {keyword:"믿음", thought:"이 말씀은 믿음에 대해 다시 생각하게 합니다.", action:"지금 믿음이 필요한 상황 하나를 떠올리고 이 말씀을 붙들어보세요."},
+  {keyword:"소망", thought:"이 구절은 소망을 담고 있어요.", action:"지금 힘든 상황이 있다면 이 말씀에서 소망을 찾아보세요."},
+  {keyword:"겸손", thought:"이 말씀은 겸손에 대해 생각해보게 합니다.", action:"오늘 누군가를 나보다 낫게 여기는 태도를 한 번 실천해보세요."},
+  {keyword:"평안", thought:"이 구절은 평안에 대한 말씀이에요.", action:"지금 마음이 어지럽다면 잠시 멈춰 이 말씀으로 숨을 고르세요."},
+  {keyword:"회개", thought:"이 말씀은 돌이킴(회개)을 이야기합니다.", action:"오늘 하나님 앞에 솔직히 돌아볼 부분이 있다면 짧게 기도로 아뢰어보세요."},
+  {keyword:"지혜", thought:"이 구절은 지혜를 구하게 합니다.", action:"오늘 결정할 일이 있다면 이 말씀을 떠올리며 지혜를 구해보세요."},
+  {keyword:"기쁨", thought:"이 말씀은 기쁨에 대해 이야기합니다.", action:"오늘 작은 기쁨 하나를 찾아 감사해보세요."},
+  {keyword:"두려움", thought:"이 구절은 두려움을 다루고 있어요.", action:"지금 두려운 일이 있다면 이 말씀을 붙들고 마음을 내려놓아보세요."},
+];
+const GENERIC_THOUGHTS = [
+  "이 말씀을 천천히 다시 한 번 읽어보세요.",
+  "이 구절에서 나에게 와닿는 단어 하나를 골라보세요.",
+  "이 말씀이 쓰인 앞뒤 상황을 함께 찾아 읽어보면 더 잘 이해될 수 있어요.",
+  "이 구절을 나만의 말로 바꿔 표현해보세요.",
+];
+const GENERIC_ACTIONS = [
+  "이 구절을 소리 내어 한 번 더 읽어보세요.",
+  "이 말씀을 손글씨로 옮겨 적어보세요.",
+  "이 구절과 관련해 짧게 기도해보세요.",
+  "이 말씀을 오늘 만나는 사람과 나눠보세요.",
+  "이 구절을 오늘 하루 동안 마음에 품고 지내보세요.",
+];
+function pickThemeOrGeneric(text, bookIdx, chapter, verse){
+  const theme = THEME_APPLICATIONS.find(t=> text.includes(t.keyword));
+  if(theme) return theme;
+  const idx = bookIdx*10007 + chapter*101 + verse;
+  return {
+    thought: GENERIC_THOUGHTS[idx % GENERIC_THOUGHTS.length],
+    action: GENERIC_ACTIONS[(idx+2) % GENERIC_ACTIONS.length]
+  };
+}
+
 /* 검색 결과가 없을 때 대신 추천할 어휘 — 성경에 실제로 자주 나오는 단어 위주로,
    검색해도 결과가 있을 만한 것만 골랐다. 사용자가 입력한 검색어와 이 목록을
    비교해(findSimilarTerms) 가장 가까운 것을 추천한다. */
@@ -1938,11 +1982,14 @@ async function renderSearchResultsList(){
   const resultsWrap = document.createElement("div");
   results.slice(0,50).forEach(r=>{
     const bookName = BOOKS[r.bookIdx] ? BOOKS[r.bookIdx][0] : `책${r.bookIdx+1}`;
+    const themeApp = pickThemeOrGeneric(r.text, r.bookIdx, r.chapter, r.verse);
     const div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `<div class="passage-ref" style="font-size:1em;">${bookName} ${r.chapter}:${r.verse}</div>
       <div style="margin-top:4px;">${highlightMatch(r.text, q)}</div>
-      <div class="muted" style="margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-size:.88em;">💭 ${escapeHtml(pickApplicationPrompt(r.bookIdx, r.chapter, r.verse))}</div>`;
+      <div class="muted" style="margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-size:.88em;">💭 생각해보기: ${escapeHtml(pickApplicationPrompt(r.bookIdx, r.chapter, r.verse))}</div>
+      <div class="muted" style="margin-top:6px;font-size:.88em;">💡 이렇게도 생각해볼 수 있어요: ${escapeHtml(themeApp.thought)}</div>
+      <div class="muted" style="margin-top:6px;font-size:.88em;">✅ 실천하기: ${escapeHtml(themeApp.action)}</div>`;
     resultsWrap.appendChild(div);
   });
   wrap.appendChild(resultsWrap);
