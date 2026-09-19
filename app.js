@@ -79,9 +79,11 @@ function levenshtein(a, b){
 }
 
 /* 사용자가 입력한 검색어와 가장 가까운 어휘를 골라 추천한다 —
-   서로 포함 관계면 우선하고, 그다음은 편집 거리가 가까운 순. */
-function findSimilarTerms(query, n=6){
-  const scored = POPULAR_SEARCH_TERMS.map(w=>{
+   서로 포함 관계면 우선하고, 그다음은 편집 거리가 가까운 순.
+   words는 실제 성경 본문에서 뽑은 어휘(있으면)이고, 없으면 큐레이션한
+   일반 단어 목록으로 대신한다. */
+function findSimilarTerms(query, n=6, words=POPULAR_SEARCH_TERMS){
+  const scored = words.map(w=>{
     const contains = w.includes(query) || query.includes(w);
     return { w, dist: levenshtein(query, w), contains };
   });
@@ -833,15 +835,43 @@ const BibleAPI = {
     return result;
   },
 
+  _vocabCache: new Map(),
+  /* 검색 결과가 없을 때 "추천 단어"를 실제 성경 어휘에서 뽑기 위한 목록.
+     로컬 인덱스를 공백 기준으로 토큰화해 자주 나오는 순으로 상위 N개만 쓴다
+     (조사가 붙은 형태 그대로라 "아들이라"처럼 실제 검색어와 맞아떨어진다). */
+  async _getVocabulary(translation){
+    if(this._vocabCache.has(translation)) return this._vocabCache.get(translation);
+    let index = this._searchIndexCache.get(translation);
+    if(!index){
+      const res = await fetch(`bible-backup/${encodeURIComponent(translation)}/search-index.json`);
+      if(!res.ok) throw new Error(`검색 인덱스 없음 (HTTP ${res.status})`);
+      index = await res.json();
+      this._searchIndexCache.set(translation, index);
+    }
+    const counts = new Map();
+    const stripRe = /[.,!?;:'"“”‘’·\-–—()[\]0-9]/g;
+    for(const [, , , text] of index){
+      text.split(/\s+/).forEach(tok=>{
+        const w = tok.replace(stripRe, "");
+        if(w.length >= 2) counts.set(w, (counts.get(w)||0)+1);
+      });
+    }
+    const vocab = [...counts.entries()].sort((a,b)=> b[1]-a[1]).slice(0,3000).map(e=>e[0]);
+    this._vocabCache.set(translation, vocab);
+    return vocab;
+  },
+
   async search(translation, query){
     const cacheKey = `${translation}:${query}`;
     if(this._searchCache.has(cacheKey)) return this._searchCache.get(cacheKey);
-    let result, usedFallback = false;
+    const qNorm = this._normalizeSearchText(query);
+    let result = [], liveErr = null;
     try{
       // match_case=false, match_whole=false 조합은 "벡터 유사도" 검색이 되어(bolls.life
       // 공식 문서 확인) 뜻이 비슷하기만 해도 걸리고(과거 오탐 버그의 원인), 일부
       // 번역본(KRV 포함)에서는 검색 인덱스가 없는지 match_whole=true 로도 여전히
-      // HTTP 400을 돌려준다 — 이럴 땐 아래 catch에서 로컬 인덱스로 대체한다.
+      // HTTP 400을 돌려주거나, 아예 조용히 빈 결과만 돌려준다(예: "내아들이라"
+      // 같은 붙여쓴 구절은 단어 단위 매칭에 걸리지 않는다).
       const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=true`;
       const data = await this._fetchJson(url);
       const list = Array.isArray(data) ? data : (data.results||[]);
@@ -854,18 +884,21 @@ const BibleAPI = {
       // (예: "술 마시지 마라" → 지명 "마라"만 있는 구절) 결과에 섞여 나온다.
       // 띄어쓰기·문장부호 차이는 무시하고, 검색어가 실제 본문에 그대로(순서대로)
       // 붙어서 들어있는 구절만 정확한 결과로 남긴다.
-      const qNorm = this._normalizeSearchText(query);
-      const precise = mapped.filter(v => this._normalizeSearchText(v.text).includes(qNorm));
-      // 그래도 하나도 안 남으면, API가 이미 좁혀서 준 결과인데(표현이 살짝 달라)
-      // 다 걸러진 것일 수 있다 — 검색 결과가 있는데 "없음"으로 보이는 것보다는
-      // API가 준 결과라도 그대로 보여주는 편이 낫다.
-      result = precise.length > 0 ? precise : mapped;
-    }catch(liveErr){
+      result = mapped.filter(v => this._normalizeSearchText(v.text).includes(qNorm));
+    }catch(err){
+      liveErr = err;
+    }
+    let usedFallback = false;
+    if(result.length === 0){
+      // 실시간이 아예 실패했거나(오류), 성공했지만 못 찾은 경우(단어 단위
+      // 매칭의 한계) 모두 여기서 저장해둔 본문 전체를 직접 훑어 보완한다.
+      // KRV는 사실상 이 경로가 주 검색 역할을 한다.
       try{
         result = await this._searchLocalIndex(translation, query);
         usedFallback = true;
       }catch(fallbackErr){
-        throw liveErr; // 원인 파악이 되도록 원래(실시간 호출) 에러를 보여준다
+        if(liveErr) throw liveErr; // 원인 파악이 되도록 원래(실시간 호출) 에러를 보여준다
+        // 실시간은 성공(그냥 0건)했는데 로컬 인덱스만 못 받아온 경우는 0건 그대로 둔다
       }
     }
     result._fromBackup = usedFallback;
@@ -1840,11 +1873,14 @@ function highlightMatch(text, query){
     + escapeHtml(text.slice(endOrig));
 }
 
-function renderSearchResultsList(){
+async function renderSearchResultsList(){
   const wrap = document.getElementById("search-results");
   const q = lastSearchQuery;
   if(lastSearchResults.length===0){
-    const { terms: suggestions, isCloseMatch } = findSimilarTerms(q);
+    // 실제 성경 본문에서 뽑은 어휘와 비교해 추천한다(안 되면 큐레이션 목록으로 대신).
+    let vocab = POPULAR_SEARCH_TERMS;
+    try{ vocab = await BibleAPI._getVocabulary(state.translation); }catch(e){ /* 큐레이션 목록으로 대체 */ }
+    const { terms: suggestions, isCloseMatch } = findSimilarTerms(q, 6, vocab);
     const hintText = isCloseMatch ? "혹시 이 단어를 찾으셨나요?" : "대신 이런 단어는 어때요?";
     wrap.innerHTML = `<div class="empty" style="text-align:center;">
       <div style="margin-bottom:8px;">${emptySearchIllustrationSVG()}</div>
