@@ -1816,7 +1816,27 @@ document.querySelectorAll("#people-gender-seg .seg-btn").forEach(btn=>{
   });
 });
 
+/* 필터 3종(성별·시대·초성)을 늘어놓으면 자리를 너무 차지해서, 다이얼로그로 감췄다 */
+function updatePeopleFilterButtonLabel(){
+  const activeCount = (peopleGenderFilter ? 1 : 0) + (peopleCategoryFilter ? 1 : 0) + (peopleFilterChar ? 1 : 0);
+  document.getElementById("people-filter-btn").textContent = activeCount ? `🔍 필터 (${activeCount})` : "🔍 필터";
+}
+
+const peopleFilterDialog = document.getElementById("people-filter-dialog");
+document.getElementById("people-filter-btn").addEventListener("click", ()=> peopleFilterDialog.showModal());
+document.getElementById("people-filter-close").addEventListener("click", ()=> peopleFilterDialog.close());
+document.getElementById("people-filter-apply").addEventListener("click", ()=> peopleFilterDialog.close());
+peopleFilterDialog.addEventListener("click", (e)=>{ if(e.target === peopleFilterDialog) peopleFilterDialog.close(); });
+document.getElementById("people-filter-reset").addEventListener("click", ()=>{
+  peopleGenderFilter = ""; peopleCategoryFilter = null; peopleFilterChar = null;
+  document.querySelectorAll("#people-gender-seg .seg-btn").forEach(b=> b.classList.toggle("active", b.dataset.gender===""));
+  renderPeopleCategoryFilter();
+  renderPeopleFilters();
+  renderPeopleList();
+});
+
 function renderPeopleList(){
+  updatePeopleFilterButtonLabel();
   const q = document.getElementById("people-search").value.trim();
   const wrap = document.getElementById("people-list");
   let list = PEOPLE;
