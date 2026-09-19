@@ -52,12 +52,44 @@ const MEDITATION_PROMPTS = [
   "본문에서 하나님이 나에게 하시는 약속이 있다면 무엇인가요?",
 ];
 
-/* 검색 결과가 없을 때 대신 추천할 주제어 — 성경에 실제로 자주 나오는 단어 위주로,
-   검색해도 결과가 있을 만한 것만 골랐다. */
+/* 검색 결과가 없을 때 대신 추천할 어휘 — 성경에 실제로 자주 나오는 단어 위주로,
+   검색해도 결과가 있을 만한 것만 골랐다. 사용자가 입력한 검색어와 이 목록을
+   비교해(findSimilarTerms) 가장 가까운 것을 추천한다. */
 const POPULAR_SEARCH_TERMS = [
   "사랑","믿음","소망","감사","기도","용서","지혜","평안","구원","인내",
-  "겸손","순종","은혜","진리","빛"
+  "겸손","순종","은혜","진리","빛","생명","평강","자비","긍휼","의",
+  "정의","거룩","성령","부활","영생","천국","죄","회개","십자가","언약",
+  "예언","기적","치유","축복","심판","두려움","담대함","충성","화평","기쁨",
+  "슬픔","고난","시험","유혹","경외","찬양","경배","안식","목자","양",
+  "씨앗","열매","빛과소금","소금","말씀","약속","순종","섬김","제자","전도"
 ];
+
+/* 두 문자열 사이의 편집 거리(레벤슈타인 거리) — 오타·비슷한 단어 추천에 사용 */
+function levenshtein(a, b){
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, ()=> new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0] = i;
+  for(let j=0;j<=n;j++) dp[0][j] = j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
+/* 사용자가 입력한 검색어와 가장 가까운 어휘를 골라 추천한다 —
+   서로 포함 관계면 우선하고, 그다음은 편집 거리가 가까운 순. */
+function findSimilarTerms(query, n=6){
+  const scored = POPULAR_SEARCH_TERMS.map(w=>{
+    const contains = w.includes(query) || query.includes(w);
+    return { w, dist: levenshtein(query, w), contains };
+  });
+  scored.sort((a,b)=> (a.contains!==b.contains) ? (a.contains?-1:1) : a.dist-b.dist);
+  const closest = scored[0];
+  const isCloseMatch = closest && (closest.contains || closest.dist <= Math.max(1, Math.ceil(query.length*0.5)));
+  return { terms: scored.slice(0,n).map(s=>s.w), isCloseMatch };
+}
 
 /* ---------- 성경 인물 색인 ----------
    구약·신약을 통틀어 잘 알려진 인물 위주로 뽑았다. 소개글은 여러 성경 인물 사전에서
@@ -1750,11 +1782,12 @@ function renderSearchResultsList(){
   const wrap = document.getElementById("search-results");
   const q = lastSearchQuery;
   if(lastSearchResults.length===0){
-    const suggestions = [...POPULAR_SEARCH_TERMS].sort(()=> Math.random()-0.5).slice(0,6);
+    const { terms: suggestions, isCloseMatch } = findSimilarTerms(q);
+    const hintText = isCloseMatch ? "혹시 이 단어를 찾으셨나요?" : "대신 이런 단어는 어때요?";
     wrap.innerHTML = `<div class="empty" style="text-align:center;">
       <div style="margin-bottom:8px;">${emptySearchIllustrationSVG()}</div>
       <div>"${escapeHtml(q)}"에 대한 검색 결과가 없습니다.</div>
-      <div class="muted" style="margin-top:6px;font-size:.88em;">대신 이런 단어는 어때요?</div>
+      <div class="muted" style="margin-top:6px;font-size:.88em;">${hintText}</div>
       <div class="row wrap" id="search-suggestions" style="justify-content:center;gap:6px;margin-top:10px;"></div>
     </div>`;
     const sugWrap = document.getElementById("search-suggestions");
