@@ -83,7 +83,14 @@ let state = {
   videoAutoFetchedDate: LS.get("videoAutoFetchedDate", ""),
 };
 if(!state.uid){ state.uid = "u_"+Math.random().toString(36).slice(2)+Date.now().toString(36); LS.set("uid", state.uid); }
-if(!state.planStart){ state.planStart = todayISO(); LS.set("planStart", state.planStart); }
+if(!state.planStart){
+  // 기본값: 올해 1월 1일 = 1일차. 재생목록 영상도 같은 날짜 세기로 맞물려 돌아간다.
+  state.planStart = `${new Date().getFullYear()}-01-01`;
+  LS.set("planStart", state.planStart);
+}
+function currentPlanDay1based(){
+  return Math.max(1, daysBetween(state.planStart, todayISO()) + 1);
+}
 
 /* ---------- 성경 본문 API 어댑터 ----------
    bolls.life 공개 API(무료, 키 불필요)를 사용합니다. 기본 번역본은 KRV(개역한글, 1961) —
@@ -197,14 +204,16 @@ function renderVideoCard(){
 }
 
 /* ---------- 재생목록에서 '오늘의 영상' 자동 가져오기 ----------
-   YouTube Data API v3 playlistItems.list 를 페이지 끝까지 순회해 재생목록의
-   가장 마지막(=보통 가장 최근에 추가된) 영상을 오늘의 영상으로 사용한다.
-   하루 한 번만 호출해 무료 할당량(1일 10,000 유닛, 호출당 1유닛)을 아낀다. */
-async function fetchLatestPlaylistVideo(apiKey, playlistId){
+   재생목록은 1일차 영상부터 순서대로 쌓여있다고 보고, 오늘이 읽기 시작일(설정 >
+   읽기 시작일, 기본값 올해 1월 1일) 기준 며칠째인지 계산해 그 순번의 영상을 가져온다.
+   성경 본문도 같은 날짜 세기(currentPlanDay1based)를 쓰므로 영상과 본문이 항상 같은
+   날로 맞물린다. YouTube Data API는 오프셋 조회가 안 되어 필요한 순번까지 페이지를
+   순회해야 하지만, 하루 한 번만 호출하므로 무료 할당량(1일 10,000유닛) 안에서 충분하다. */
+async function fetchPlaylistVideoAtIndex(apiKey, playlistId, index1based){
   let pageToken = "";
-  let lastItem = null;
+  let collected = [];
   let guard = 0;
-  do{
+  while(collected.length < index1based){
     const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${encodeURIComponent(playlistId)}&key=${encodeURIComponent(apiKey)}${pageToken ? `&pageToken=${pageToken}` : ""}`;
     const res = await fetch(url);
     if(!res.ok){
@@ -212,12 +221,14 @@ async function fetchLatestPlaylistVideo(apiKey, playlistId){
       throw new Error(`HTTP ${res.status} — ${body.slice(0,200)}`);
     }
     const data = await res.json();
-    if(Array.isArray(data.items) && data.items.length) lastItem = data.items[data.items.length-1];
+    if(Array.isArray(data.items)) collected = collected.concat(data.items);
     pageToken = data.nextPageToken || "";
     guard++;
-  } while(pageToken && guard < 200);
-  if(!lastItem) throw new Error("재생목록에 영상이 없습니다");
-  const vid = lastItem.snippet.resourceId.videoId;
+    if(!pageToken || guard >= 50) break;
+  }
+  const item = collected[index1based - 1];
+  if(!item) throw new Error(`재생목록에 ${index1based}번째(오늘) 영상이 아직 없습니다 (현재 ${collected.length}개)`);
+  const vid = item.snippet.resourceId.videoId;
   return `https://www.youtube.com/watch?v=${vid}`;
 }
 
@@ -225,13 +236,14 @@ async function autoFetchTodayVideo(force){
   if(!state.playlistId || !state.youtubeApiKey) return;
   if(!force && state.videoAutoFetchedDate === todayISO()) return;
   const statusEl = document.getElementById("playlist-status");
-  if(statusEl) statusEl.textContent = "재생목록에서 오늘의 영상을 확인하는 중…";
+  const dayIdx = currentPlanDay1based();
+  if(statusEl) statusEl.textContent = `재생목록에서 ${dayIdx}일차 영상을 확인하는 중…`;
   try{
-    const url = await fetchLatestPlaylistVideo(state.youtubeApiKey, state.playlistId);
+    const url = await fetchPlaylistVideoAtIndex(state.youtubeApiKey, state.playlistId, dayIdx);
     await saveTodayVideo(url);
     state.videoAutoFetchedDate = todayISO();
     LS.set("videoAutoFetchedDate", state.videoAutoFetchedDate);
-    if(statusEl) statusEl.textContent = "✅ 최신 영상을 가져왔습니다: " + url;
+    if(statusEl) statusEl.textContent = `✅ ${dayIdx}일차 영상을 가져왔습니다: ` + url;
   }catch(err){
     console.error("재생목록 자동 확인 실패", err);
     if(statusEl) statusEl.textContent = "❌ 재생목록 확인 실패: " + err.message;
@@ -356,7 +368,7 @@ document.getElementById("bible-source-save").addEventListener("click", async ()=
 
 /* ---------- 오늘의 읽기 ---------- */
 function getPlanEntryForToday(){
-  const idx = ((daysBetween(state.planStart, todayISO()) % PLAN.length) + PLAN.length) % PLAN.length;
+  const idx = (currentPlanDay1based() - 1) % PLAN.length;
   return { idx, entry: PLAN[idx] };
 }
 
@@ -413,11 +425,11 @@ function renderEmojiPicker(pickedEmoji){
     const b = document.createElement("button");
     b.className = "emoji-btn"+(em===pickedEmoji?" picked":"");
     b.textContent = em;
-    b.addEventListener("click", async (ev)=>{
+    b.addEventListener("click", async ()=>{
       await pushReaction(todayISO(), em);
       setText("my-status-label", `오늘 ${em} 로 표시함`);
       renderEmojiPicker(em);
-      spawnConfetti(ev.clientX, ev.clientY);
+      spawnConfetti();
       toast("읽음으로 표시했습니다");
     });
     return b;
@@ -427,41 +439,56 @@ function renderEmojiPicker(pickedEmoji){
 
   const more = document.createElement("button");
   more.className = "emoji-btn emoji-more";
-  more.textContent = "+";
   more.setAttribute("aria-label", "이모지 더보기");
   wrap.appendChild(more);
 
+  // extraRow는 wrap의 자식으로 둬서, 다음 렌더링 때 wrap.innerHTML="" 로
+  // 함께 정리되도록 한다 (예전엔 형제 노드로 붙여서 재렌더링마다 쌓였음).
   const extraRow = document.createElement("div");
   extraRow.className = "emoji-row";
-  extraRow.style.marginTop = "8px";
+  extraRow.style.cssText = "width:100%;margin-top:8px;";
   extraRow.style.display = pickedInExtra ? "flex" : "none";
   EMOJIS_EXTRA.forEach(em => extraRow.appendChild(makeBtn(em)));
-  wrap.parentNode.insertBefore(extraRow, wrap.nextSibling);
+  wrap.appendChild(extraRow);
 
+  more.textContent = extraRow.style.display === "none" ? "+" : "–";
   more.addEventListener("click", ()=>{
-    extraRow.style.display = extraRow.style.display === "none" ? "flex" : "none";
+    const willOpen = extraRow.style.display === "none";
+    extraRow.style.display = willOpen ? "flex" : "none";
+    more.textContent = willOpen ? "–" : "+";
   });
 }
 
-function spawnConfetti(x, y){
+/* 화면 전체에 색종이가 비처럼 쏟아지는 축제 효과 */
+function spawnConfetti(){
   const colors = ["#8b5cf6","#ff8fab","#ffd166","#06d6a0","#4cc9f0"];
-  const originX = Number.isFinite(x) ? x : window.innerWidth/2;
-  const originY = Number.isFinite(y) ? y : window.innerHeight/2;
-  for(let i=0;i<24;i++){
+  const emojis = ["🎉","✨","🎊","💜","⭐"];
+  const count = 90;
+  for(let i=0;i<count;i++){
     const p = document.createElement("span");
-    const size = 6 + Math.random()*6;
-    p.style.cssText = `position:fixed;left:${originX}px;top:${originY}px;width:${size}px;height:${size}px;
-      background:${colors[i%colors.length]};border-radius:${Math.random()<0.5?"50%":"2px"};
-      pointer-events:none;z-index:999;opacity:1;`;
+    const startX = Math.random()*window.innerWidth;
+    const delay = Math.random()*350;
+    const useEmoji = Math.random() < 0.25;
+    if(useEmoji){
+      p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      p.style.cssText = `position:fixed;left:${startX}px;top:-30px;font-size:${16+Math.random()*14}px;
+        pointer-events:none;z-index:9999;`;
+    } else {
+      const size = 6 + Math.random()*8;
+      p.style.cssText = `position:fixed;left:${startX}px;top:-20px;width:${size}px;height:${size}px;
+        background:${colors[i%colors.length]};border-radius:${Math.random()<0.5?"50%":"2px"};
+        pointer-events:none;z-index:9999;`;
+    }
     document.body.appendChild(p);
-    const angle = Math.random()*Math.PI*2;
-    const dist = 60 + Math.random()*120;
-    const dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist - 40;
-    const rot = Math.random()*360;
+    const fallDist = window.innerHeight + 60;
+    const drift = (Math.random()-0.5)*180;
+    const rot = (Math.random()-0.5)*720;
+    const duration = 1400 + Math.random()*900;
     p.animate([
       { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
-      { transform: `translate(${dx}px, ${dy + 160}px) rotate(${rot}deg)`, opacity: 0 }
-    ], { duration: 700 + Math.random()*400, easing: "cubic-bezier(.2,.7,.3,1)" })
+      { transform: `translate(${drift}px, ${fallDist}px) rotate(${rot}deg)`, opacity: 1, offset: 0.85 },
+      { transform: `translate(${drift}px, ${fallDist+20}px) rotate(${rot}deg)`, opacity: 0 }
+    ], { duration, delay, easing: "cubic-bezier(.15,.5,.35,1)", fill: "forwards" })
       .onfinish = () => p.remove();
   }
 }
