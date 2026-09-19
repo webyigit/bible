@@ -809,32 +809,66 @@ const BibleAPI = {
     this._chapterCache.set(cacheKey, result);
     return result;
   },
+  _normalizeSearchText(s){
+    return (s||"").replace(/[\s.,!?;:'"“”‘’·\-–—()[\]]/g, "").toLowerCase();
+  },
+
+  _searchIndexCache: new Map(),
+  /* 실시간 검색(v2/find)이 안 될 때의 안전장치: bible-backup/에 미리 받아둔
+     번역본 전체 본문을 하나로 합친 검색 인덱스를 받아 브라우저에서 직접 훑는다.
+     (scripts/build_search_index.mjs가 만들어 두고, 첫 성공 후엔 메모리에 캐시) */
+  async _searchLocalIndex(translation, query){
+    let index = this._searchIndexCache.get(translation);
+    if(!index){
+      const res = await fetch(`bible-backup/${encodeURIComponent(translation)}/search-index.json`);
+      if(!res.ok) throw new Error(`검색 인덱스 없음 (HTTP ${res.status})`);
+      index = await res.json();
+      this._searchIndexCache.set(translation, index);
+    }
+    const qNorm = this._normalizeSearchText(query);
+    const result = [];
+    for(const [bookIdx, chapter, verse, text] of index){
+      if(this._normalizeSearchText(text).includes(qNorm)) result.push({ bookIdx, chapter, verse, text });
+    }
+    return result;
+  },
+
   async search(translation, query){
     const cacheKey = `${translation}:${query}`;
     if(this._searchCache.has(cacheKey)) return this._searchCache.get(cacheKey);
-    // match_case=false, match_whole=false 조합은 "벡터 유사도" 검색이 되어(bolls.life
-    // 공식 문서 확인) 뜻이 비슷하기만 해도 걸리고(과거 오탐 버그의 원인), 일부
-    // 번역본(KRV 포함)에서는 벡터 인덱스가 없는지 HTTP 400을 돌려줬다.
-    // match_whole=true 를 주면 어휘(문자열) 매칭으로 전환되어 더 안정적이다.
-    const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=true`;
-    const data = await this._fetchJson(url);
-    const list = Array.isArray(data) ? data : (data.results||[]);
-    const mapped = list.map(v => ({
-      bookIdx: (v.book ?? v.book_id ?? 1)-1,
-      chapter: v.chapter, verse: v.verse,
-      text: (v.text||"").replace(/<[^>]+>/g,"")
-    }));
-    // API가 검색어를 단어 단위로 느슨하게 매칭해, 단어 하나만 우연히 겹쳐도
-    // (예: "술 마시지 마라" → 지명 "마라"만 있는 구절) 결과에 섞여 나온다.
-    // 띄어쓰기·문장부호 차이는 무시하고, 검색어가 실제 본문에 그대로(순서대로)
-    // 붙어서 들어있는 구절만 정확한 결과로 남긴다.
-    const normalize = s => (s||"").replace(/[\s.,!?;:'"“”‘’·\-–—()[\]]/g, "").toLowerCase();
-    const qNorm = normalize(query);
-    const precise = mapped.filter(v => normalize(v.text).includes(qNorm));
-    // 그래도 하나도 안 남으면, API가 이미 좁혀서 준 결과인데(표현이 살짝 달라)
-    // 다 걸러진 것일 수 있다 — 검색 결과가 있는데 "없음"으로 보이는 것보다는
-    // API가 준 결과라도 그대로 보여주는 편이 낫다.
-    const result = precise.length > 0 ? precise : mapped;
+    let result, usedFallback = false;
+    try{
+      // match_case=false, match_whole=false 조합은 "벡터 유사도" 검색이 되어(bolls.life
+      // 공식 문서 확인) 뜻이 비슷하기만 해도 걸리고(과거 오탐 버그의 원인), 일부
+      // 번역본(KRV 포함)에서는 검색 인덱스가 없는지 match_whole=true 로도 여전히
+      // HTTP 400을 돌려준다 — 이럴 땐 아래 catch에서 로컬 인덱스로 대체한다.
+      const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=true`;
+      const data = await this._fetchJson(url);
+      const list = Array.isArray(data) ? data : (data.results||[]);
+      const mapped = list.map(v => ({
+        bookIdx: (v.book ?? v.book_id ?? 1)-1,
+        chapter: v.chapter, verse: v.verse,
+        text: (v.text||"").replace(/<[^>]+>/g,"")
+      }));
+      // API가 검색어를 단어 단위로 느슨하게 매칭해, 단어 하나만 우연히 겹쳐도
+      // (예: "술 마시지 마라" → 지명 "마라"만 있는 구절) 결과에 섞여 나온다.
+      // 띄어쓰기·문장부호 차이는 무시하고, 검색어가 실제 본문에 그대로(순서대로)
+      // 붙어서 들어있는 구절만 정확한 결과로 남긴다.
+      const qNorm = this._normalizeSearchText(query);
+      const precise = mapped.filter(v => this._normalizeSearchText(v.text).includes(qNorm));
+      // 그래도 하나도 안 남으면, API가 이미 좁혀서 준 결과인데(표현이 살짝 달라)
+      // 다 걸러진 것일 수 있다 — 검색 결과가 있는데 "없음"으로 보이는 것보다는
+      // API가 준 결과라도 그대로 보여주는 편이 낫다.
+      result = precise.length > 0 ? precise : mapped;
+    }catch(liveErr){
+      try{
+        result = await this._searchLocalIndex(translation, query);
+        usedFallback = true;
+      }catch(fallbackErr){
+        throw liveErr; // 원인 파악이 되도록 원래(실시간 호출) 에러를 보여준다
+      }
+    }
+    result._fromBackup = usedFallback;
     this._searchCache.set(cacheKey, result);
     return result;
   }
@@ -1756,14 +1790,15 @@ async function doSearch(){
     testamentSeg.style.display = "flex";
     renderSearchChosungFilter();
     renderSearchResultsList();
+    if(lastSearchResults._fromBackup) toast("실시간 서버에 연결이 안 돼 저장된 본문에서 찾았어요");
   }catch(err){
     console.error(err);
+    setText("api-debug", "마지막 오류(검색): "+err.message);
     wrap.innerHTML = `<div class="empty" style="text-align:center;">
       <div style="margin-bottom:8px;">${emptySearchIllustrationSVG()}</div>
       <div>검색 중 문제가 생겼어요.</div>
-      <div class="muted" style="margin-top:6px;font-size:.88em;">번역본 코드를 확인하거나 잠시 후 다시 시도해주세요.</div>
+      <div class="muted" style="margin-top:6px;font-size:.88em;">잠시 후 다시 시도해주세요.</div>
       <button class="btn small ghost" id="search-retry-btn" style="margin-top:12px;">다시 시도</button>
-      <div class="muted" style="margin-top:10px;font-size:.78em;">${escapeHtml(err.message)}</div>
     </div>`;
     document.getElementById("search-retry-btn").addEventListener("click", doSearch);
   }
