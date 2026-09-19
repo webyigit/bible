@@ -1813,6 +1813,33 @@ function renderSearchChosungFilter(){
   });
 }
 
+/* 검색 결과 구절에서 검색어에 해당하는 부분을 <mark>로 감싼다. 띄어쓰기·
+   문장부호가 검색어와 본문에서 다를 수 있으니(예: "취하지말라"↔"취하지 말라"),
+   먼저 그대로 찾아보고 안 되면 정규화한 위치를 원문 위치로 되짚어 감싼다. */
+function highlightMatch(text, query){
+  if(!query) return escapeHtml(text);
+  const lowerText = text.toLowerCase(), lowerQuery = query.toLowerCase();
+  const idx = lowerText.indexOf(lowerQuery);
+  if(idx !== -1){
+    return escapeHtml(text.slice(0,idx))
+      + '<mark class="hl">' + escapeHtml(text.slice(idx, idx+query.length)) + '</mark>'
+      + escapeHtml(text.slice(idx+query.length));
+  }
+  const stripRe = /[\s.,!?;:'"“”‘’·\-–—()[\]]/;
+  const map = [];
+  let normalized = "";
+  for(let i=0;i<text.length;i++){
+    if(!stripRe.test(text[i])){ normalized += text[i].toLowerCase(); map.push(i); }
+  }
+  const qNorm = lowerQuery.replace(new RegExp(stripRe.source,"g"), "");
+  const nIdx = qNorm ? normalized.indexOf(qNorm) : -1;
+  if(nIdx === -1) return escapeHtml(text);
+  const startOrig = map[nIdx], endOrig = map[nIdx+qNorm.length-1]+1;
+  return escapeHtml(text.slice(0,startOrig))
+    + '<mark class="hl">' + escapeHtml(text.slice(startOrig,endOrig)) + '</mark>'
+    + escapeHtml(text.slice(endOrig));
+}
+
 function renderSearchResultsList(){
   const wrap = document.getElementById("search-results");
   const q = lastSearchQuery;
@@ -1855,7 +1882,7 @@ function renderSearchResultsList(){
     const div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `<div class="passage-ref" style="font-size:1em;">${bookName} ${r.chapter}:${r.verse}</div>
-      <div style="margin-top:4px;">${escapeHtml(r.text)}</div>`;
+      <div style="margin-top:4px;">${highlightMatch(r.text, q)}</div>`;
     resultsWrap.appendChild(div);
   });
   wrap.appendChild(resultsWrap);
