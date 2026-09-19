@@ -28,9 +28,29 @@ function planSequence(){
 }
 const PLAN = planSequence();
 
-const EMOJIS_PRIMARY = ["🙏","👍","❤️","😊","🔥"];
-const EMOJIS_EXTRA = ["😭","🥹","💪","🙌","✨","📖","🕊️","💖","😇","👏","🎉","🌿"];
+const EMOJIS_PRIMARY = ["🙏","👍","❤️","😊","🔥","👏","🙌","💪","✨"];
+const EMOJIS_EXTRA = ["😭","🥹","📖","🕊️","💖","😇","🎉","🌿"];
 const EMOJIS = [...EMOJIS_PRIMARY, ...EMOJIS_EXTRA]; // 배지 등 "이미 고른 이모지인지" 판별용
+
+/* 매일 돌아가며 보여줄 묵상 포인트 — 특정 본문 해석이 아니라 어떤 본문에도 적용 가능한
+   일반적인 묵상 질문이라, 신학적으로 틀린 내용을 단정할 위험 없이 안전하게 쓸 수 있다. */
+const MEDITATION_PROMPTS = [
+  "오늘 본문에서 가장 마음에 와닿는 구절은 무엇인가요?",
+  "이 말씀을 통해 하나님에 대해 새롭게 알게 된 것은 무엇인가요?",
+  "오늘 배운 내용을 삶에 어떻게 적용할 수 있을까요?",
+  "본문 속 인물의 행동에서 배울 점은 무엇인가요?",
+  "오늘 하루 감사한 일 한 가지를 떠올려보세요.",
+  "이 본문이 나에게 주는 위로나 도전은 무엇인가요?",
+  "오늘 말씀을 한 문장으로 요약한다면?",
+  "본문에서 반복되는 단어나 주제가 있나요?",
+  "이 말씀을 통해 기도하고 싶은 제목은 무엇인가요?",
+  "오늘 본문에서 이해가 안 되는 부분이 있다면 무엇인가요?",
+  "본문 속 상황이 지금 내 삶과 비슷한 점이 있나요?",
+  "오늘 말씀을 누군가와 나눈다면 어떤 이야기를 하고 싶나요?",
+  "본문을 읽고 떠오른 하나님의 성품은 무엇인가요?",
+  "오늘 하루 이 말씀을 기억하며 실천할 작은 행동은 무엇인가요?",
+  "본문에서 하나님이 나에게 하시는 약속이 있다면 무엇인가요?",
+];
 
 /* ---------- 유튜브 링크 → 영상ID / 썸네일 ---------- */
 function parseYouTubeId(url){
@@ -78,6 +98,8 @@ let state = {
   readDates: LS.get("readDates", {}),   // { "2026-09-19": "🙏" } 로컬 개인 기록(오프라인 대비)
   bookmarks: LS.get("bookmarks", []),
   deletedBookmarks: LS.get("deletedBookmarks", []),
+  meditationNotes: LS.get("meditationNotes", {}), // { "2026-09-19": "오늘 느낀 점..." }
+  chapterVerseCounts: LS.get("chapterVerseCounts", {}), // { "2026-09-19": 31 } 실제 API로 받아온 절 수
   todayVideoUrl: LS.get("todayVideoUrl", ""),
   playlistId: LS.get("playlistId", ""),
   youtubeApiKey: LS.get("youtubeApiKey", ""), // 이 기기에만 저장, Firestore에는 절대 쓰지 않음
@@ -100,40 +122,49 @@ function currentPlanDay1based(){
    이 세션 환경은 외부 네트워크가 막혀 있어 실제 호출로 직접 검증하지는 못했으니, 배포 후
    본문이 안 뜨면 설정 > 디버그의 오류 메시지를 확인하고 번역본 코드를 바꿔가며 테스트해주세요. */
 const BibleAPI = {
-  // bolls.life가 CORS를 막아 직접 fetch가 실패하면(주로 "Failed to fetch") 공개 CORS
-  // 프록시를 한 번 더 시도한다. 둘 다 실패하면 마지막 오류를 그대로 올려서 화면/디버그에 보여준다.
+  // bolls.life가 CORS를 막아 직접 fetch가 실패할 수 있어(주로 "Failed to fetch") 공개 CORS
+  // 프록시로도 "동시에" 시도한다. 순서대로(직접 실패 → 프록시 시도) 하면 실패를 기다리는
+  // 시간만큼 느려지므로, Promise.any로 둘 중 먼저 성공하는 쪽을 그대로 쓴다.
   async _fetchJson(url){
-    try{
-      const res = await fetch(url);
-      if(!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
+    const tryFetch = async (u, label) => {
+      const res = await fetch(u);
+      if(!res.ok) throw new Error(`HTTP ${res.status} (${label}) — ${url}`);
       return await res.json();
-    }catch(directErr){
-      try{
-        const proxied = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-        const res2 = await fetch(proxied);
-        if(!res2.ok) throw new Error(`HTTP ${res2.status} (프록시 경유) — ${url}`);
-        return await res2.json();
-      }catch(proxyErr){
-        throw new Error(`직접 호출 실패(${directErr.message}) / 프록시 경유도 실패(${proxyErr.message})`);
-      }
+    };
+    const proxied = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+    try{
+      return await Promise.any([tryFetch(url, "직접"), tryFetch(proxied, "프록시")]);
+    }catch(agg){
+      const msgs = (agg.errors || [agg]).map(e=> e.message).join(" / ");
+      throw new Error(`본문 조회 실패: ${msgs}`);
     }
   },
+  _chapterCache: new Map(),
+  _searchCache: new Map(),
   async getChapter(translation, bookIdx, chapter){
+    const cacheKey = `${translation}:${bookIdx}:${chapter}`;
+    if(this._chapterCache.has(cacheKey)) return this._chapterCache.get(cacheKey);
     const bookId = bookIdx+1; // bolls.life 는 창세기=1 ... 요한계시록=66 순서를 사용
     const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
     const data = await this._fetchJson(url);
     if(!Array.isArray(data) || data.length===0) throw new Error(`빈 응답 — ${url}`);
-    return data.map(v => ({ verse: v.verse ?? v.pk ?? "", text: (v.text||"").replace(/<[^>]+>/g,"") }));
+    const result = data.map(v => ({ verse: v.verse ?? v.pk ?? "", text: (v.text||"").replace(/<[^>]+>/g,"") }));
+    this._chapterCache.set(cacheKey, result);
+    return result;
   },
   async search(translation, query){
+    const cacheKey = `${translation}:${query}`;
+    if(this._searchCache.has(cacheKey)) return this._searchCache.get(cacheKey);
     const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=false`;
     const data = await this._fetchJson(url);
     const list = Array.isArray(data) ? data : (data.results||[]);
-    return list.map(v => ({
+    const result = list.map(v => ({
       bookIdx: (v.book ?? v.book_id ?? 1)-1,
       chapter: v.chapter, verse: v.verse,
       text: (v.text||"").replace(/<[^>]+>/g,"")
     }));
+    this._searchCache.set(cacheKey, result);
+    return result;
   }
 };
 
@@ -179,6 +210,7 @@ async function initFirebase(){
     document.getElementById("group-hint").style.display = "none";
     watchTodayReactions();
     watchRanking();
+    watchMeditationCounts();
     watchTodayVideo();
   }catch(err){
     console.error("Firebase 초기화 실패", err);
@@ -217,6 +249,19 @@ function renderVideoCard(){
   document.getElementById("today-video-thumb").src = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
   card.style.display = "block";
 }
+
+function renderMeditation(dayIdx, dateISO){
+  const prompt = MEDITATION_PROMPTS[(dayIdx - 1) % MEDITATION_PROMPTS.length];
+  setText("meditation-prompt", prompt);
+  document.getElementById("meditation-note").value = state.meditationNotes[dateISO] || "";
+  setText("meditation-status", state.meditationNotes[dateISO] ? "오늘 묵상노트를 작성했어요" : "");
+}
+document.getElementById("meditation-save").addEventListener("click", async ()=>{
+  const text = document.getElementById("meditation-note").value;
+  await saveMeditationNote(todayISO(), text);
+  setText("meditation-status", text.trim() ? "오늘 묵상노트를 작성했어요" : "");
+  toast("묵상노트를 저장했습니다");
+});
 
 /* ---------- 재생목록에서 '오늘의 영상' 자동 가져오기 ----------
    재생목록은 1일차 영상부터 순서대로 쌓여있다고 보고, 오늘이 읽기 시작일(설정 >
@@ -295,6 +340,32 @@ function watchRanking(){
   }, err=> console.error("전체 반응 조회 실패", err));
 }
 
+let allMeditationCountsCache = [];
+function watchMeditationCounts(){
+  const {collection, onSnapshot} = fb.mod;
+  onSnapshot(collection(fb.db,"meditationCounts"), snap=>{
+    allMeditationCountsCache = [];
+    snap.forEach(d=> allMeditationCountsCache.push(d.data()));
+    renderRank();
+  }, err=> console.error("묵상노트 집계 조회 실패", err));
+}
+
+async function saveMeditationNote(dateISO, text){
+  if(text.trim()){
+    state.meditationNotes[dateISO] = text;
+  } else {
+    delete state.meditationNotes[dateISO];
+  }
+  LS.set("meditationNotes", state.meditationNotes);
+  if(fb.ready){
+    const {doc, setDoc} = fb.mod;
+    const count = Object.keys(state.meditationNotes).length;
+    await setDoc(doc(fb.db,"meditationCounts",state.uid), {
+      uid: state.uid, nickname: state.nickname || "익명", count, updatedAt: Date.now()
+    });
+  }
+}
+
 /* ---------- 유틸 UI ---------- */
 function setText(id, text){ const el=document.getElementById(id); if(el) el.textContent = text; }
 function toast(msg){
@@ -318,7 +389,9 @@ document.querySelectorAll("nav.bottom .nav-btn").forEach(btn=>{
 function applySettings(){
   document.body.dataset.theme = state.darkMode ? "dark" : "light";
   document.documentElement.style.setProperty("--font-scale", state.fontScale);
-  document.getElementById("toggle-dark").checked = state.darkMode;
+  document.querySelectorAll("#theme-seg .seg-btn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.themeChoice === (state.darkMode ? "dark" : "light"));
+  });
   document.getElementById("btn-theme-toggle").textContent = state.darkMode ? "☀️" : "🌙";
   document.getElementById("font-size-label").textContent = Math.round(state.fontScale*100)+"%";
   document.getElementById("nickname-input").value = state.nickname;
@@ -331,7 +404,9 @@ function applySettings(){
 function setDarkMode(on){
   state.darkMode = on; LS.set("darkMode", state.darkMode); applySettings();
 }
-document.getElementById("toggle-dark").addEventListener("change", e=> setDarkMode(e.target.checked));
+document.querySelectorAll("#theme-seg .seg-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=> setDarkMode(btn.dataset.themeChoice === "dark"));
+});
 document.getElementById("btn-theme-toggle").addEventListener("click", ()=> setDarkMode(!state.darkMode));
 document.getElementById("today-video-save").addEventListener("click", ()=>{
   saveTodayVideo(document.getElementById("today-video-input").value.trim());
@@ -392,7 +467,7 @@ async function renderToday(){
   const dateISO = todayISO();
   setText("today-date", new Date().toLocaleDateString("ko-KR", {year:"numeric",month:"long",day:"numeric",weekday:"long"}));
   const {idx, entry} = getPlanEntryForToday();
-  setText("today-daycount", `읽기 ${idx+1}/${TOTAL_CHAPTERS}일차`);
+  setText("today-daycount", `전체 성경 ${TOTAL_CHAPTERS}장 중 ${idx+1}번째 장 (${idx+1}일차)`);
   setText("today-ref", `${entry.book} ${entry.chapter}장`);
   document.getElementById("plan-progress-bar").style.width = Math.round(((idx+1)/TOTAL_CHAPTERS)*100)+"%";
   setText("plan-progress-label", `전체 성경 통독 진행률 ${((idx+1)/TOTAL_CHAPTERS*100).toFixed(1)}%`);
@@ -406,6 +481,8 @@ async function renderToday(){
     const verses = await BibleAPI.getChapter(state.translation, entry.bookIdx, entry.chapter);
     currentChapterVerses = verses.map(v=>({...v, bookIdx:entry.bookIdx, book:entry.book, chapter:entry.chapter}));
     renderVerses();
+    state.chapterVerseCounts[dateISO] = currentChapterVerses.length;
+    LS.set("chapterVerseCounts", state.chapterVerseCounts);
   }catch(err){
     console.error(err);
     textEl.innerHTML = "";
@@ -413,6 +490,8 @@ async function renderToday(){
     errEl.textContent = "성경 본문을 불러오지 못했습니다. 설정 > 성경 본문 소스에서 번역본 코드를 확인해주세요.";
     setText("api-debug", "마지막 오류: "+err.message);
   }
+
+  renderMeditation(idx, dateISO);
 
   // 오늘 내 읽음 상태
   const mine = state.readDates[dateISO];
@@ -450,7 +529,9 @@ function renderEmojiPicker(pickedEmoji){
     return b;
   };
 
-  EMOJIS_PRIMARY.forEach(em => wrap.appendChild(makeBtn(em)));
+  // "+" 목록에서 고른 이모지는 맨 앞자리로 끌어와 매번 펼치지 않아도 바로 보이게 한다.
+  const primaryToShow = pickedInExtra ? [pickedEmoji, ...EMOJIS_PRIMARY] : EMOJIS_PRIMARY;
+  primaryToShow.forEach(em => wrap.appendChild(makeBtn(em)));
 
   const more = document.createElement("button");
   more.className = "emoji-btn emoji-more";
@@ -463,7 +544,8 @@ function renderEmojiPicker(pickedEmoji){
   extraRow.className = "emoji-row";
   extraRow.style.cssText = "width:100%;margin-top:8px;";
   extraRow.style.display = pickedInExtra ? "flex" : "none";
-  EMOJIS_EXTRA.forEach(em => extraRow.appendChild(makeBtn(em)));
+  const extraToShow = pickedInExtra ? EMOJIS_EXTRA.filter(em => em !== pickedEmoji) : EMOJIS_EXTRA;
+  extraToShow.forEach(em => extraRow.appendChild(makeBtn(em)));
   wrap.appendChild(extraRow);
 
   more.textContent = extraRow.style.display === "none" ? "+" : "–";
@@ -474,36 +556,38 @@ function renderEmojiPicker(pickedEmoji){
   });
 }
 
-/* 화면 전체에 색종이가 비처럼 쏟아지는 축제 효과 */
+/* 화면 정중앙에서 색종이가 사방으로 펑 터져 화면 전체를 채우는 축제 효과 */
 function spawnConfetti(){
   const colors = ["#8b5cf6","#ff8fab","#ffd166","#06d6a0","#4cc9f0"];
   const emojis = ["🎉","✨","🎊","💜","⭐"];
-  const count = 90;
+  const cx = window.innerWidth/2, cy = window.innerHeight/2;
+  const maxDist = Math.hypot(window.innerWidth, window.innerHeight)/2 + 60;
+  const count = 110;
   for(let i=0;i<count;i++){
     const p = document.createElement("span");
-    const startX = Math.random()*window.innerWidth;
-    const delay = Math.random()*350;
     const useEmoji = Math.random() < 0.25;
     if(useEmoji){
       p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-      p.style.cssText = `position:fixed;left:${startX}px;top:-30px;font-size:${16+Math.random()*14}px;
-        pointer-events:none;z-index:9999;`;
+      p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;font-size:${16+Math.random()*14}px;
+        pointer-events:none;z-index:9999;transform:translate(-50%,-50%);`;
     } else {
       const size = 6 + Math.random()*8;
-      p.style.cssText = `position:fixed;left:${startX}px;top:-20px;width:${size}px;height:${size}px;
+      p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;
         background:${colors[i%colors.length]};border-radius:${Math.random()<0.5?"50%":"2px"};
-        pointer-events:none;z-index:9999;`;
+        pointer-events:none;z-index:9999;transform:translate(-50%,-50%);`;
     }
     document.body.appendChild(p);
-    const fallDist = window.innerHeight + 60;
-    const drift = (Math.random()-0.5)*180;
+    const angle = Math.random()*Math.PI*2;
+    const dist = maxDist*(0.4+Math.random()*0.6);
+    const dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist;
     const rot = (Math.random()-0.5)*720;
-    const duration = 1400 + Math.random()*900;
+    const duration = 1100 + Math.random()*700;
+    const delay = Math.random()*120;
     p.animate([
-      { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
-      { transform: `translate(${drift}px, ${fallDist}px) rotate(${rot}deg)`, opacity: 1, offset: 0.85 },
-      { transform: `translate(${drift}px, ${fallDist+20}px) rotate(${rot}deg)`, opacity: 0 }
-    ], { duration, delay, easing: "cubic-bezier(.15,.5,.35,1)", fill: "forwards" })
+      { transform: "translate(-50%,-50%) translate(0,0) rotate(0deg)", opacity: 1 },
+      { transform: `translate(-50%,-50%) translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 1, offset: 0.7 },
+      { transform: `translate(-50%,-50%) translate(${dx}px, ${dy+140}px) rotate(${rot}deg)`, opacity: 0 }
+    ], { duration, delay, easing: "cubic-bezier(.15,.6,.35,1)", fill: "forwards" })
       .onfinish = () => p.remove();
   }
 }
@@ -572,15 +656,48 @@ document.getElementById("note-save").addEventListener("click", ()=>{
 
 let bookmarkView = "active";
 document.getElementById("bm-view-active").addEventListener("click", ()=> switchBookmarkView("active"));
+document.getElementById("bm-view-meditation").addEventListener("click", ()=> switchBookmarkView("meditation"));
 document.getElementById("bm-view-trash").addEventListener("click", ()=> switchBookmarkView("trash"));
 function switchBookmarkView(view){
   bookmarkView = view;
   document.getElementById("bm-view-active").className = "btn small" + (view==="active" ? "" : " ghost");
+  document.getElementById("bm-view-meditation").className = "btn small" + (view==="meditation" ? "" : " ghost");
   document.getElementById("bm-view-trash").className = "btn small" + (view==="trash" ? "" : " ghost");
   renderBookmarks();
 }
 
+function renderMeditationList(){
+  const wrap = document.getElementById("bookmark-list");
+  const dates = Object.keys(state.meditationNotes).filter(d=> state.meditationNotes[d].trim()).sort().reverse();
+  if(dates.length===0){
+    wrap.innerHTML = '<div class="empty">저장된 묵상노트가 없습니다.<br>오늘 탭에서 묵상노트를 남겨보세요.</div>';
+    return;
+  }
+  wrap.innerHTML = "";
+  dates.forEach(date=>{
+    const div = document.createElement("div");
+    div.className = "bookmark-item";
+    div.innerHTML = `
+      <span class="ref">${date}</span>
+      <div class="note" style="margin-top:4px;">${escapeHtml(state.meditationNotes[date])}</div>
+      <div class="row" style="margin-top:10px;gap:8px;">
+        <button class="btn ghost small" data-med-del="${date}">🗑️ 삭제</button>
+      </div>
+    `;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll("[data-med-del]").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      await saveMeditationNote(btn.dataset.medDel, "");
+      if(btn.dataset.medDel === todayISO()) renderMeditation(currentPlanDay1based(), todayISO());
+      renderMeditationList();
+      toast("묵상노트를 삭제했습니다");
+    });
+  });
+}
+
 function renderBookmarks(){
+  if(bookmarkView === "meditation"){ renderMeditationList(); return; }
   const wrap = document.getElementById("bookmark-list");
   const list = bookmarkView === "trash" ? state.deletedBookmarks : state.bookmarks;
 
@@ -597,17 +714,15 @@ function renderBookmarks(){
     const key = `${b.bookIdx}:${b.chapter}:${b.verse}`;
     const div = document.createElement("div");
     div.className = "bookmark-item";
-    const actionBtn = bookmarkView === "trash"
-      ? `<button class="btn ghost small icon-only" data-restore="${key}" aria-label="복원" title="복원">↩️</button>
-         <button class="btn ghost small icon-only" data-purge="${key}" aria-label="완전 삭제" title="완전 삭제">🗑️</button>`
-      : `<button class="btn ghost small icon-only" data-del="${key}" aria-label="삭제" title="삭제">🗑️</button>`;
+    const actionBtns = bookmarkView === "trash"
+      ? `<button class="btn ghost small" data-restore="${key}">↩️ 북마크하기</button>
+         <button class="btn ghost small" data-purge="${key}">🗑️ 영구삭제</button>`
+      : `<button class="btn ghost small" data-del="${key}">🗑️ 삭제</button>`;
     div.innerHTML = `
-      <div class="row between">
-        <span class="ref">${b.book} ${b.chapter}:${b.verse}</span>
-        <span class="row" style="gap:4px;">${actionBtn}</span>
-      </div>
+      <span class="ref">${b.book} ${b.chapter}:${b.verse}</span>
       <div class="muted" style="margin-top:4px;">${escapeHtml(b.text)}</div>
       ${b.note ? `<div class="note">${escapeHtml(b.note)}</div>` : ""}
+      <div class="row" style="margin-top:10px;gap:8px;">${actionBtns}</div>
     `;
     wrap.appendChild(div);
   });
@@ -669,11 +784,64 @@ function computeLocalStats(dates){
   return {total, streak, monthPct};
 }
 
+function getPlanDaysRange(){
+  const total = currentPlanDay1based();
+  const days = [];
+  for(let i=1;i<=total;i++){
+    const d = new Date(state.planStart+"T00:00:00");
+    d.setDate(d.getDate() + (i-1));
+    const dateISO = new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    const entry = PLAN[(i-1) % PLAN.length];
+    days.push({ day:i, date:dateISO, book:entry.book, chapter:entry.chapter });
+  }
+  return days;
+}
+
+let statDetailCache = { readDays:[], missedDays:[] };
+function updateExtendedStats(){
+  const days = getPlanDaysRange();
+  const readSet = new Set(Object.keys(state.readDates));
+  const readDays = days.filter(d=> readSet.has(d.date));
+  const missedDays = days.filter(d=> !readSet.has(d.date));
+  const versesTotal = readDays.reduce((sum,d)=> sum + (state.chapterVerseCounts[d.date]||0), 0);
+  statDetailCache = { readDays, missedDays };
+  setText("stat-verses", versesTotal);
+  setText("stat-missed", missedDays.length);
+}
+
+const statDetailDialog = document.getElementById("stat-detail-dialog");
+function openStatDetail(kind){
+  const list = kind === "missed" ? statDetailCache.missedDays : statDetailCache.readDays;
+  const title = kind === "missed" ? "놓친 말씀 목록" : (kind === "verses" ? "읽은 구절 상세" : "읽은 날짜 목록");
+  setText("stat-detail-title", title);
+  const wrap = document.getElementById("stat-detail-list");
+  if(list.length===0){
+    wrap.innerHTML = '<div class="empty">해당하는 기록이 없습니다.</div>';
+  } else {
+    wrap.innerHTML = "";
+    [...list].reverse().forEach(d=>{
+      const vcount = state.chapterVerseCounts[d.date];
+      const row = document.createElement("div");
+      row.className = "bookmark-item";
+      row.innerHTML = `<span class="ref">${d.day}일차 · ${d.date}</span>
+        <div class="muted" style="margin-top:4px;">${d.book} ${d.chapter}장${vcount?` · ${vcount}절`:""}</div>`;
+      wrap.appendChild(row);
+    });
+  }
+  statDetailDialog.showModal();
+}
+document.getElementById("stat-detail-close").addEventListener("click", ()=> statDetailDialog.close());
+statDetailDialog.addEventListener("click",(e)=>{ if(e.target===statDetailDialog) statDetailDialog.close(); });
+document.querySelectorAll(".stat-click").forEach(btn=>{
+  btn.addEventListener("click", ()=> openStatDetail(btn.dataset.stat));
+});
+
 function renderRank(){
   const myLocalStats = computeLocalStats(Object.keys(state.readDates));
   setText("stat-total", myLocalStats.total);
   setText("stat-streak", myLocalStats.streak);
   setText("stat-month", myLocalStats.monthPct+"%");
+  updateExtendedStats();
   const streakBadge = document.getElementById("header-streak");
   if(myLocalStats.streak > 0){
     streakBadge.style.display = "inline-block";
@@ -684,18 +852,29 @@ function renderRank(){
 
   const rankEmpty = document.getElementById("rank-empty");
   const rankTable = document.getElementById("rank-table");
+  const thead = document.getElementById("rank-thead");
   if(!fb.ready){ rankEmpty.style.display="block"; rankTable.style.display="none"; return; }
 
-  const byUser = {};
-  allReactionsCache.forEach(r=>{
-    byUser[r.uid] = byUser[r.uid] || {nickname:r.nickname, dates:[]};
-    byUser[r.uid].dates.push(r.date);
-    byUser[r.uid].nickname = r.nickname || byUser[r.uid].nickname;
-  });
-  const rows = Object.entries(byUser).map(([uid,info])=>{
-    const st = computeLocalStats(info.dates);
-    return {uid, nickname: info.nickname, total: st.total, streak: st.streak};
-  }).sort((a,b)=> b.total-a.total || b.streak-a.streak);
+  let rows;
+  if(rankCategory === "meditation"){
+    thead.innerHTML = "<tr><th>#</th><th>이름</th><th>작성한 묵상노트</th></tr>";
+    rows = allMeditationCountsCache
+      .map(m=> ({uid:m.uid, nickname:m.nickname, count:m.count||0}))
+      .filter(r=> r.count>0)
+      .sort((a,b)=> b.count-a.count);
+  } else {
+    thead.innerHTML = "<tr><th>#</th><th>이름</th><th>총 읽은 날</th><th>연속</th></tr>";
+    const byUser = {};
+    allReactionsCache.forEach(r=>{
+      byUser[r.uid] = byUser[r.uid] || {nickname:r.nickname, dates:[]};
+      byUser[r.uid].dates.push(r.date);
+      byUser[r.uid].nickname = r.nickname || byUser[r.uid].nickname;
+    });
+    rows = Object.entries(byUser).map(([uid,info])=>{
+      const st = computeLocalStats(info.dates);
+      return {uid, nickname: info.nickname, total: st.total, streak: st.streak};
+    }).sort((a,b)=> b.total-a.total || b.streak-a.streak);
+  }
 
   if(rows.length===0){ rankEmpty.style.display="block"; rankTable.style.display="none"; return; }
   rankEmpty.style.display="none"; rankTable.style.display="table";
@@ -704,9 +883,22 @@ function renderRank(){
   rows.forEach((r,i)=>{
     const tr = document.createElement("tr");
     if(r.uid===state.uid) tr.className="me";
-    tr.innerHTML = `<td class="num">${i+1}</td><td>${escapeHtml(r.nickname||"익명")}${r.uid===state.uid?" (나)":""}</td><td>${r.total}</td><td>${r.streak}</td>`;
+    const nameCell = `${escapeHtml(r.nickname||"익명")}${r.uid===state.uid?" (나)":""}`;
+    tr.innerHTML = rankCategory === "meditation"
+      ? `<td class="num">${i+1}</td><td>${nameCell}</td><td>${r.count}</td>`
+      : `<td class="num">${i+1}</td><td>${nameCell}</td><td>${r.total}</td><td>${r.streak}</td>`;
     body.appendChild(tr);
   });
+}
+
+let rankCategory = "read";
+document.getElementById("rank-cat-read").addEventListener("click", ()=> switchRankCategory("read"));
+document.getElementById("rank-cat-meditation").addEventListener("click", ()=> switchRankCategory("meditation"));
+function switchRankCategory(cat){
+  rankCategory = cat;
+  document.getElementById("rank-cat-read").className = "btn small" + (cat==="read" ? "" : " ghost");
+  document.getElementById("rank-cat-meditation").className = "btn small" + (cat==="meditation" ? "" : " ghost");
+  renderRank();
 }
 
 /* ---------- 검색 ---------- */
