@@ -28,7 +28,9 @@ function planSequence(){
 }
 const PLAN = planSequence();
 
-const EMOJIS = ["🙏","👍","❤️","😊","🔥"];
+const EMOJIS_PRIMARY = ["🙏","👍","❤️","😊","🔥"];
+const EMOJIS_EXTRA = ["😭","🥹","💪","🙌","✨","📖","🕊️","💖","😇","👏","🎉","🌿"];
+const EMOJIS = [...EMOJIS_PRIMARY, ...EMOJIS_EXTRA]; // 배지 등 "이미 고른 이모지인지" 판별용
 
 /* ---------- 유튜브 링크 → 영상ID / 썸네일 ---------- */
 function parseYouTubeId(url){
@@ -285,10 +287,6 @@ document.querySelectorAll("nav.bottom .nav-btn").forEach(btn=>{
     if(btn.dataset.tab==="tab-bookmark") renderBookmarks();
   });
 });
-document.getElementById("btn-goto-settings").addEventListener("click", ()=>{
-  document.querySelector('nav.bottom .nav-btn[data-tab="tab-settings"]').click();
-});
-
 /* ---------- 설정 적용 ---------- */
 function applySettings(){
   document.body.dataset.theme = state.darkMode ? "dark" : "light";
@@ -409,18 +407,63 @@ async function renderToday(){
 function renderEmojiPicker(pickedEmoji){
   const wrap = document.getElementById("emoji-picker");
   wrap.innerHTML = "";
-  EMOJIS.forEach(em=>{
+  const pickedInExtra = EMOJIS_EXTRA.includes(pickedEmoji);
+
+  const makeBtn = (em) => {
     const b = document.createElement("button");
     b.className = "emoji-btn"+(em===pickedEmoji?" picked":"");
     b.textContent = em;
-    b.addEventListener("click", async ()=>{
+    b.addEventListener("click", async (ev)=>{
       await pushReaction(todayISO(), em);
       setText("my-status-label", `오늘 ${em} 로 표시함`);
       renderEmojiPicker(em);
+      spawnConfetti(ev.clientX, ev.clientY);
       toast("읽음으로 표시했습니다");
     });
-    wrap.appendChild(b);
+    return b;
+  };
+
+  EMOJIS_PRIMARY.forEach(em => wrap.appendChild(makeBtn(em)));
+
+  const more = document.createElement("button");
+  more.className = "emoji-btn emoji-more";
+  more.textContent = "+";
+  more.setAttribute("aria-label", "이모지 더보기");
+  wrap.appendChild(more);
+
+  const extraRow = document.createElement("div");
+  extraRow.className = "emoji-row";
+  extraRow.style.marginTop = "8px";
+  extraRow.style.display = pickedInExtra ? "flex" : "none";
+  EMOJIS_EXTRA.forEach(em => extraRow.appendChild(makeBtn(em)));
+  wrap.parentNode.insertBefore(extraRow, wrap.nextSibling);
+
+  more.addEventListener("click", ()=>{
+    extraRow.style.display = extraRow.style.display === "none" ? "flex" : "none";
   });
+}
+
+function spawnConfetti(x, y){
+  const colors = ["#8b5cf6","#ff8fab","#ffd166","#06d6a0","#4cc9f0"];
+  const originX = Number.isFinite(x) ? x : window.innerWidth/2;
+  const originY = Number.isFinite(y) ? y : window.innerHeight/2;
+  for(let i=0;i<24;i++){
+    const p = document.createElement("span");
+    const size = 6 + Math.random()*6;
+    p.style.cssText = `position:fixed;left:${originX}px;top:${originY}px;width:${size}px;height:${size}px;
+      background:${colors[i%colors.length]};border-radius:${Math.random()<0.5?"50%":"2px"};
+      pointer-events:none;z-index:999;opacity:1;`;
+    document.body.appendChild(p);
+    const angle = Math.random()*Math.PI*2;
+    const dist = 60 + Math.random()*120;
+    const dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist - 40;
+    const rot = Math.random()*360;
+    p.animate([
+      { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
+      { transform: `translate(${dx}px, ${dy + 160}px) rotate(${rot}deg)`, opacity: 0 }
+    ], { duration: 700 + Math.random()*400, easing: "cubic-bezier(.2,.7,.3,1)" })
+      .onfinish = () => p.remove();
+  }
 }
 
 function renderReactorList(list){
