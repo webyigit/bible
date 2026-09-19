@@ -77,6 +77,7 @@ let state = {
   planStart: LS.get("planStart", null), // Firebase 있으면 원격 값으로 덮어씀
   readDates: LS.get("readDates", {}),   // { "2026-09-19": "🙏" } 로컬 개인 기록(오프라인 대비)
   bookmarks: LS.get("bookmarks", []),
+  deletedBookmarks: LS.get("deletedBookmarks", []),
   todayVideoUrl: LS.get("todayVideoUrl", ""),
   playlistId: LS.get("playlistId", ""),
   youtubeApiKey: LS.get("youtubeApiKey", ""), // 이 기기에만 저장, Firestore에는 절대 쓰지 않음
@@ -99,20 +100,34 @@ function currentPlanDay1based(){
    이 세션 환경은 외부 네트워크가 막혀 있어 실제 호출로 직접 검증하지는 못했으니, 배포 후
    본문이 안 뜨면 설정 > 디버그의 오류 메시지를 확인하고 번역본 코드를 바꿔가며 테스트해주세요. */
 const BibleAPI = {
+  // bolls.life가 CORS를 막아 직접 fetch가 실패하면(주로 "Failed to fetch") 공개 CORS
+  // 프록시를 한 번 더 시도한다. 둘 다 실패하면 마지막 오류를 그대로 올려서 화면/디버그에 보여준다.
+  async _fetchJson(url){
+    try{
+      const res = await fetch(url);
+      if(!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
+      return await res.json();
+    }catch(directErr){
+      try{
+        const proxied = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+        const res2 = await fetch(proxied);
+        if(!res2.ok) throw new Error(`HTTP ${res2.status} (프록시 경유) — ${url}`);
+        return await res2.json();
+      }catch(proxyErr){
+        throw new Error(`직접 호출 실패(${directErr.message}) / 프록시 경유도 실패(${proxyErr.message})`);
+      }
+    }
+  },
   async getChapter(translation, bookIdx, chapter){
     const bookId = bookIdx+1; // bolls.life 는 창세기=1 ... 요한계시록=66 순서를 사용
     const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
-    const data = await res.json();
+    const data = await this._fetchJson(url);
     if(!Array.isArray(data) || data.length===0) throw new Error(`빈 응답 — ${url}`);
     return data.map(v => ({ verse: v.verse ?? v.pk ?? "", text: (v.text||"").replace(/<[^>]+>/g,"") }));
   },
   async search(translation, query){
     const url = `https://bolls.life/v2/find/${encodeURIComponent(translation)}?search=${encodeURIComponent(query)}&match_case=false&match_whole=false`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
-    const data = await res.json();
+    const data = await this._fetchJson(url);
     const list = Array.isArray(data) ? data : (data.results||[]);
     return list.map(v => ({
       bookIdx: (v.book ?? v.book_id ?? 1)-1,
@@ -537,6 +552,8 @@ function openNoteDialog(v){
   noteDialog.showModal();
 }
 document.getElementById("note-cancel").addEventListener("click", ()=> noteDialog.close());
+document.getElementById("note-close").addEventListener("click", ()=> noteDialog.close());
+noteDialog.addEventListener("click", (e)=>{ if(e.target === noteDialog) noteDialog.close(); });
 document.getElementById("note-save").addEventListener("click", ()=>{
   if(!pendingVerse) return;
   const note = document.getElementById("note-input").value;
@@ -553,33 +570,85 @@ document.getElementById("note-save").addEventListener("click", ()=>{
   toast("북마크에 저장했습니다");
 });
 
+let bookmarkView = "active";
+document.getElementById("bm-view-active").addEventListener("click", ()=> switchBookmarkView("active"));
+document.getElementById("bm-view-trash").addEventListener("click", ()=> switchBookmarkView("trash"));
+function switchBookmarkView(view){
+  bookmarkView = view;
+  document.getElementById("bm-view-active").className = "btn small" + (view==="active" ? "" : " ghost");
+  document.getElementById("bm-view-trash").className = "btn small" + (view==="trash" ? "" : " ghost");
+  renderBookmarks();
+}
+
 function renderBookmarks(){
   const wrap = document.getElementById("bookmark-list");
-  if(state.bookmarks.length===0){
-    wrap.innerHTML = '<div class="empty">저장된 북마크가 없습니다.<br>오늘 본문에서 구절을 눌러 북마크를 남겨보세요.</div>';
+  const list = bookmarkView === "trash" ? state.deletedBookmarks : state.bookmarks;
+
+  if(list.length===0){
+    wrap.innerHTML = bookmarkView === "trash"
+      ? '<div class="empty">삭제된 북마크가 없습니다.</div>'
+      : '<div class="empty">저장된 북마크가 없습니다.<br>오늘 본문에서 구절을 눌러 북마크를 남겨보세요.</div>';
     return;
   }
+
   wrap.innerHTML = "";
-  [...state.bookmarks].sort((a,b)=>b.ts-a.ts).forEach(b=>{
+  const sortKey = bookmarkView === "trash" ? "deletedAt" : "ts";
+  [...list].sort((a,b)=>b[sortKey]-a[sortKey]).forEach(b=>{
+    const key = `${b.bookIdx}:${b.chapter}:${b.verse}`;
     const div = document.createElement("div");
     div.className = "bookmark-item";
+    const actionBtn = bookmarkView === "trash"
+      ? `<button class="btn ghost small icon-only" data-restore="${key}" aria-label="복원" title="복원">↩️</button>
+         <button class="btn ghost small icon-only" data-purge="${key}" aria-label="완전 삭제" title="완전 삭제">🗑️</button>`
+      : `<button class="btn ghost small icon-only" data-del="${key}" aria-label="삭제" title="삭제">🗑️</button>`;
     div.innerHTML = `
       <div class="row between">
         <span class="ref">${b.book} ${b.chapter}:${b.verse}</span>
-        <button class="btn ghost small" data-del="${b.bookIdx}:${b.chapter}:${b.verse}">삭제</button>
+        <span class="row" style="gap:4px;">${actionBtn}</span>
       </div>
       <div class="muted" style="margin-top:4px;">${escapeHtml(b.text)}</div>
       ${b.note ? `<div class="note">${escapeHtml(b.note)}</div>` : ""}
     `;
     wrap.appendChild(div);
   });
+
   wrap.querySelectorAll("[data-del]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const [bookIdx,chapter,verse] = btn.dataset.del.split(":").map(Number);
-      state.bookmarks = state.bookmarks.filter(b=> !(b.bookIdx===bookIdx && b.chapter===chapter && b.verse===verse));
+      const idx = state.bookmarks.findIndex(b=> b.bookIdx===bookIdx && b.chapter===chapter && b.verse===verse);
+      if(idx<0) return;
+      const [removed] = state.bookmarks.splice(idx,1);
+      removed.deletedAt = Date.now();
+      state.deletedBookmarks.push(removed);
       LS.set("bookmarks", state.bookmarks);
+      LS.set("deletedBookmarks", state.deletedBookmarks);
       renderBookmarks();
       renderVerses();
+      toast("삭제됨 탭으로 옮겼습니다");
+    });
+  });
+  wrap.querySelectorAll("[data-restore]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const [bookIdx,chapter,verse] = btn.dataset.restore.split(":").map(Number);
+      const idx = state.deletedBookmarks.findIndex(b=> b.bookIdx===bookIdx && b.chapter===chapter && b.verse===verse);
+      if(idx<0) return;
+      const [restored] = state.deletedBookmarks.splice(idx,1);
+      delete restored.deletedAt;
+      state.bookmarks.push(restored);
+      LS.set("bookmarks", state.bookmarks);
+      LS.set("deletedBookmarks", state.deletedBookmarks);
+      renderBookmarks();
+      renderVerses();
+      toast("북마크를 복원했습니다");
+    });
+  });
+  wrap.querySelectorAll("[data-purge]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const [bookIdx,chapter,verse] = btn.dataset.purge.split(":").map(Number);
+      state.deletedBookmarks = state.deletedBookmarks.filter(b=> !(b.bookIdx===bookIdx && b.chapter===chapter && b.verse===verse));
+      LS.set("deletedBookmarks", state.deletedBookmarks);
+      renderBookmarks();
+      toast("완전히 삭제했습니다");
     });
   });
 }
