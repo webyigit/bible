@@ -1,0 +1,38 @@
+name: Backup Bible text
+
+# bolls.life 실시간 API가 언젠가 응답하지 않을 때를 대비해, 앱과 함께 배포되는
+# 정적 백업(bible-backup/)을 주기적으로 새로 받아 커밋한다. app.js의
+# BibleAPI.getChapter는 실시간 호출이 실패하면 이 폴더를 대신 읽는다.
+on:
+  schedule:
+    - cron: "0 3 1 * *" # 매달 1일 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backup-bible-text
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 성경 본문 백업 생성
+        run: node scripts/build_bible_backup.mjs KRV
+      - name: 변경 사항 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bible-backup/
+          if git diff --cached --quiet; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git commit -m "성경 본문 백업 갱신 (자동)"
+            git push
+          fi

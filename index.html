@@ -285,7 +285,13 @@
       <h2 class="section-title">성경 인물 색인</h2>
       <div class="card">
         <input type="text" id="people-search" placeholder="이름으로 검색 (예: 모세)">
-        <div class="row wrap" id="people-filter" style="margin-top:10px;gap:6px;"></div>
+        <div class="seg-toggle" id="people-gender-seg" style="margin-top:10px;">
+          <button class="seg-btn active" data-gender="">전체</button>
+          <button class="seg-btn" data-gender="남">남성</button>
+          <button class="seg-btn" data-gender="여">여성</button>
+        </div>
+        <div class="row wrap" id="people-category-filter" style="margin-top:8px;gap:6px;"></div>
+        <div class="row wrap" id="people-filter" style="margin-top:8px;gap:6px;"></div>
       </div>
       <div id="people-list"></div>
     </div>

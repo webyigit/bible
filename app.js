@@ -71,202 +71,256 @@ const POPULAR_SEARCH_TERMS = [
 const PEOPLE = [
   {name:"아담", category:"창조", icon:"🌱", color:["#8bc98b","#4a8f4a"], figure:{hair:"short",beard:"short",mood:"warm"},
     related:[{"name":"하와","reason":"하나님이 아담의 갈빗대로 지어 짝지어 주신 아내"}],
+    gender:"남",
     summary:"하나님이 흙으로 빚어 생기를 불어넣으신 첫 사람으로, 에덴동산에서 하와와 함께 살았다. 선악을 알게 하는 나무의 열매를 먹지 말라는 명령을 어겨 동산에서 쫓겨났고, 이후 가인과 아벨을 비롯한 자녀를 낳았다. 누가복음 3장의 예수 족보는 계보를 거슬러 올라가 마지막에 아담에 이른다.",
     refs:"창세기 1~5장"},
   {name:"하와", category:"창조", icon:"🍎", color:["#ffb199","#e0577a"], figure:{hair:"veil",mood:"warm"},
     related:[{"name":"아담","reason":"하나님이 흙으로 빚어 지으신 남편"}],
+    gender:"여",
     summary:"아담의 갈빗대로 지음받은 첫 여자로, '모든 산 자의 어머니'로 불린다. 뱀의 유혹에 넘어가 선악과를 먹고 아담에게도 주었으며, 그 결과 두 사람은 에덴동산에서 쫓겨났다. 이후 가인, 아벨, 셋을 낳았다.",
     refs:"창세기 2~4장"},
   {name:"노아", category:"족장 이전", icon:"🚢", color:["#7fb3d5","#4a7fa5"], figure:{hair:"long",beard:"long",mood:"serious"},
+    gender:"남",
     summary:"당대에 하나님과 동행한 의인으로, 세상이 부패하자 하나님의 지시대로 거대한 방주를 지어 가족 여덟 명과 짐승들을 데리고 대홍수에서 살아남았다. 홍수 후 하나님은 다시는 물로 세상을 심판하지 않겠다는 언약의 표징으로 무지개를 두셨다. 누가복음 3장의 예수 족보에도 이름이 나온다.",
     refs:"창세기 6~9장"},
   {name:"아브라함", category:"족장", icon:"⭐", color:["#e0b04c","#8b5cf6"], figure:{hair:"long",beard:"long",mood:"wise"},
     related:[{"name":"사라","reason":"평생을 함께한 아내"},{"name":"이삭","reason":"노년에 약속대로 얻은 아들"}],
+    gender:"남",
     summary:"본래 이름은 아브람으로, 하나님의 부르심을 받아 고향 갈대아 우르를 떠나 가나안으로 이주했다. 자손을 하늘의 별처럼 많게 하겠다는 언약을 받았고, 늙어서 아들 이삭을 얻었으며 훗날 이삭을 제물로 바치라는 시험을 통과했다. 마태복음 1장 예수의 족보가 바로 아브라함에서 시작된다.",
     refs:"창세기 12~25장"},
   {name:"사라", category:"족장", icon:"⛺", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"gentle"},
     related:[{"name":"아브라함","reason":"남편"},{"name":"이삭","reason":"90세에 낳은 아들"}],
+    gender:"여",
     summary:"아브라함의 아내로, 오랫동안 자녀가 없다가 90세에 약속의 아들 이삭을 낳았다. 처음 그 약속을 들었을 때는 속으로 웃었지만, 결국 하나님의 약속이 이루어지는 것을 직접 목격했다.",
     refs:"창세기 11~23장"},
   {name:"이삭", category:"족장", icon:"🐏", color:["#c9a27e","#8b5cf6"], figure:{hair:"short",beard:"short",mood:"gentle"},
     related:[{"name":"아브라함","reason":"아버지"},{"name":"사라","reason":"어머니"},{"name":"리브가","reason":"아내"},{"name":"야곱","reason":"쌍둥이 아들 중 하나"}],
+    gender:"남",
     summary:"아브라함과 사라가 노년에 얻은 약속의 아들로, 모리아산에서 제물로 바쳐질 뻔했으나 하나님이 마련하신 숫양으로 대신되었다. 리브가와 결혼해 쌍둥이 야곱과 에서를 낳았다. 마태복음 1장 예수의 족보에 이름이 나온다.",
     refs:"창세기 21~35장"},
   {name:"리브가", category:"족장", icon:"🏺", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"warm"},
     related:[{"name":"이삭","reason":"남편"},{"name":"야곱","reason":"장자권을 잇도록 이끈 아들"}],
+    gender:"여",
     summary:"아브라함의 종이 우물가에서 만나 이삭의 아내로 데려온 여인으로, 낙타에게 물을 길어주는 후한 마음씨로 신붓감으로 선택되었다. 야곱과 에서 쌍둥이를 낳았고, 훗날 야곱이 장자의 축복을 받도록 이끌었다.",
     refs:"창세기 24~27장"},
   {name:"야곱", category:"족장", icon:"🪜", color:["#c9a27e","#8b5cf6"], figure:{hair:"long",beard:"long",mood:"wise"},
     related:[{"name":"이삭","reason":"아버지"},{"name":"리브가","reason":"어머니"},{"name":"라헬","reason":"가장 사랑한 아내"},{"name":"레아","reason":"첫 아내"},{"name":"요셉","reason":"라헬에게서 얻은 아들"}],
+    gender:"남",
     summary:"이삭의 둘째 아들로, 형 에서의 장자권과 축복을 얻어냈다. 하란으로 도망가던 길에 하늘까지 닿은 사다리 꿈을 꾸었고, 얍복강에서 하나님의 사자와 씨름한 뒤 '이스라엘'이라는 새 이름을 받았다. 열두 아들이 훗날 이스라엘 열두 지파의 조상이 되었으며, 마태복음 1장 예수의 족보에도 이름이 나온다.",
     refs:"창세기 25~49장"},
   {name:"라헬", category:"족장", icon:"🐑", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"warm"},
     related:[{"name":"야곱","reason":"남편"},{"name":"레아","reason":"같은 남편을 둔 언니"},{"name":"요셉","reason":"낳은 아들"}],
+    gender:"여",
     summary:"야곱이 첫눈에 반해 칠 년을 일하고 얻으려 했던 아내로, 언니 레아가 먼저 시집오는 바람에 다시 칠 년을 더 일해야 했다. 오랫동안 자녀가 없다가 요셉과 베냐민을 낳았고, 베냐민을 낳다가 산고로 세상을 떠났다.",
     refs:"창세기 29~35장"},
   {name:"레아", category:"족장", icon:"🌾", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"warm"},
     related:[{"name":"야곱","reason":"남편"},{"name":"라헬","reason":"같은 남편을 둔 동생"}],
+    gender:"여",
     summary:"야곱의 첫 아내로, 아버지 라반의 계략으로 동생 라헬 대신 먼저 야곱과 혼인했다. 남편의 사랑을 덜 받았지만 르우벤, 시므온, 레위, 유다를 비롯해 가장 많은 아들을 낳았다.",
     refs:"창세기 29~35장"},
   {name:"요셉", category:"족장", icon:"🌾", color:["#e0b04c","#8b5cf6"], figure:{hair:"short",mood:"wise"},
     related:[{"name":"야곱","reason":"아버지"},{"name":"라헬","reason":"어머니"}],
+    gender:"남",
     summary:"야곱이 라헬에게서 얻은 아들로, 채색옷을 입을 만큼 사랑받았지만 형들의 시기로 애굽에 노예로 팔려갔다. 누명을 쓰고 옥에 갇히기도 했으나 꿈 해석 능력으로 바로의 신임을 얻어 애굽의 총리가 되었고, 흉년이 들자 자신을 팔았던 형들을 용서하고 가족을 구했다.",
     refs:"창세기 37~50장"},
   {name:"모세", category:"출애굽", icon:"📜", color:["#7fb3d5","#4a7fa5"], figure:{hair:"long",beard:"long",mood:"serious"},
     related:[{"name":"아론","reason":"대변인 역할을 한 형"},{"name":"미리암","reason":"아기 때부터 지켜준 누이"},{"name":"여호수아","reason":"40년을 함께한 시종이자 후계자"}],
+    gender:"남",
     summary:"히브리 노예의 아들로 태어나 애굽 공주의 아들로 자랐으나, 동족을 학대하는 애굽인을 죽이고 광야로 도망쳤다. 불타는 떨기나무에서 하나님의 부르심을 받아 이스라엘 백성을 애굽에서 이끌어냈고, 시내산에서 십계명을 받았다. 신명기 18장에는 하나님이 훗날 모세와 같은 선지자를 세우시리라는 예언이 있는데, 신약은 이를 예수와 연결지어 이해한다.",
     refs:"출애굽기~신명기"},
   {name:"아론", category:"출애굽", icon:"⚱️", color:["#e0b04c","#8b5cf6"], figure:{hair:"long",beard:"long",mood:"wise"},
     related:[{"name":"모세","reason":"동생"},{"name":"미리암","reason":"누이"}],
+    gender:"남",
     summary:"모세의 형으로, 말을 잘 못하는 모세를 대신해 바로 앞에서 대변인 역할을 했다. 이스라엘의 첫 대제사장으로 세워졌지만, 모세가 산에 오른 사이 백성의 요구로 금송아지를 만드는 잘못을 저지르기도 했다.",
     refs:"출애굽기~민수기"},
   {name:"미리암", category:"출애굽", icon:"🎵", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"joyful"},
     related:[{"name":"모세","reason":"동생"},{"name":"아론","reason":"오빠"}],
+    gender:"여",
     summary:"모세와 아론의 누이로, 아기 모세가 나일강에 띄워졌을 때 지켜보다가 그의 친어머니를 유모로 연결해주었다. 홍해를 건넌 뒤 소고를 들고 춤추며 하나님을 찬양한 여선지자였다.",
     refs:"출애굽기 2장, 15장, 민수기 12장"},
   {name:"여호수아", category:"출애굽", icon:"⚔️", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"bold"},
     related:[{"name":"모세","reason":"40년을 섬긴 스승"}],
+    gender:"남",
     summary:"모세의 시종으로 40년 광야 생활을 함께했고, 가나안 정탐 때 갈렙과 함께 긍정적인 보고를 했던 두 사람 중 하나였다. 모세가 죽은 뒤 그 뒤를 이어 이스라엘 백성을 이끌고 요단강을 건너 가나안 땅을 정복했다.",
     refs:"여호수아서"},
   {name:"드보라", category:"사사", icon:"⚖️", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"bold"},
+    gender:"여",
     summary:"종려나무 아래 앉아 이스라엘의 송사를 재판하던 여선지자이자 유일한 여사사다. 장군 바락에게 가나안 군대와 싸우라고 명했고, 함께 나가 승리를 거둔 뒤 승전가를 불렀다.",
     refs:"사사기 4~5장"},
   {name:"기드온", category:"사사", icon:"🏺", color:["#c9a27e","#8b5cf6"], figure:{hair:"short",beard:"short",mood:"serious"},
+    gender:"남",
     summary:"미디안의 압제 속에 포도주 틀에 숨어 밀을 타작하다가 천사의 부름을 받았다. 확신이 서지 않아 양털로 두 번이나 표징을 구했고, 결국 단 삼백 명의 용사로 나팔과 항아리, 횃불만으로 미디안 대군을 물리쳤다.",
     refs:"사사기 6~8장"},
   {name:"삼손", category:"사사", icon:"🦁", color:["#c9a27e","#8b5cf6"], figure:{hair:"long",mood:"bold"},
+    gender:"남",
     summary:"나실인으로 태어나면서부터 머리카락을 자르지 않겠다는 서원을 지녀 엄청난 힘을 가졌다. 맨손으로 사자를 찢을 만큼 강했지만 들릴라에게 힘의 비밀을 털어놓았다가 배신당해 머리카락이 잘리고 힘을 잃었으며, 마지막 순간 다시 힘을 얻어 블레셋 신전을 무너뜨렸다.",
     refs:"사사기 13~16장"},
   {name:"룻", category:"룻기", icon:"🌾", color:["#e0b04c","#8b5cf6"], figure:{hair:"veil",mood:"warm"},
     related:[{"name":"나오미","reason":"끝까지 함께한 시어머니"},{"name":"다윗","reason":"룻의 증손자"}],
+    gender:"여",
     summary:"모압 여인으로, 남편을 잃고도 시어머니 나오미를 떠나지 않고 '어머니의 백성이 내 백성이 되고 어머니의 하나님이 내 하나님이 되시리니'라며 함께 베들레헴으로 갔다. 이삭을 줍다가 보아스를 만나 재혼했고, 다윗의 증조모가 되었다. 마태복음 1장 예수의 족보에 이름이 오른 몇 안 되는 여성 중 하나다.",
     refs:"룻기"},
   {name:"나오미", category:"룻기", icon:"🌾", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"sorrow"},
     related:[{"name":"룻","reason":"끝까지 곁을 지킨 며느리"}],
+    gender:"여",
     summary:"흉년을 피해 모압으로 갔다가 남편과 두 아들을 모두 잃고 며느리 룻과 함께 고향 베들레헴으로 돌아온 과부다. 스스로를 '마라(쓰다)'라 부를 만큼 힘든 시절을 보냈지만, 룻과 보아스의 결혼을 주선하며 새로운 소망을 보았다.",
     refs:"룻기"},
   {name:"사무엘", category:"사사·선지자", icon:"🕯️", color:["#7fb3d5","#4a7fa5"], figure:{hair:"long",beard:"long",mood:"wise"},
     related:[{"name":"사울","reason":"기름 부어 첫 왕으로 세움"},{"name":"다윗","reason":"기름 부어 왕으로 세움"}],
+    gender:"남",
     summary:"어머니 한나의 간절한 기도로 태어나 어릴 때부터 성전에서 자랐다. 밤에 하나님의 음성을 듣고 응답한 뒤 선지자로 세워졌으며, 이스라엘의 마지막 사사로서 사울과 다윗 모두에게 기름을 부어 왕으로 세웠다.",
     refs:"사무엘상"},
   {name:"사울", category:"왕", icon:"👑", color:["#9a94b5","#5b4a7a"], figure:{hair:"short",beard:"short",mood:"sorrow"},
     related:[{"name":"사무엘","reason":"기름 부어 왕으로 세운 선지자"},{"name":"다윗","reason":"시기해 죽이려 했던 신하"},{"name":"요나단","reason":"아들"}],
+    gender:"남",
     summary:"이스라엘의 첫 번째 왕으로, 처음에는 겸손했으나 점차 하나님의 명령에 불순종하고 다윗을 시기해 여러 차례 죽이려 했다. 결국 블레셋과의 전투에서 패해 스스로 목숨을 끊었다.",
     refs:"사무엘상"},
   {name:"다윗", category:"왕", icon:"🪨", color:["#e0b04c","#8b5cf6"], figure:{hair:"short",beard:"short",mood:"bold"},
     related:[{"name":"사울","reason":"섬기다 쫓겨다닌 첫 왕"},{"name":"골리앗","reason":"물맷돌로 쓰러뜨린 블레셋 장수"},{"name":"요나단","reason":"생명을 나눈 벗"},{"name":"솔로몬","reason":"밧세바에게서 얻은 아들"},{"name":"사무엘","reason":"기름 부어 왕으로 세운 선지자"}],
+    gender:"남",
     summary:"베들레헴의 목동이었다가 물맷돌 하나로 블레셋 장수 골리앗을 쓰러뜨려 이름을 알렸다. 사울에게 쫓기는 시절을 거쳐 왕이 되었고, 시편의 많은 부분을 지었다. 밧세바 사건 같은 큰 잘못도 저질렀지만 회개했으며, 마태복음 1장 예수의 족보에서 예수는 '다윗의 자손'으로 소개된다.",
     refs:"사무엘상~열왕기상"},
   {name:"골리앗", category:"왕정", icon:"⚔️", color:["#9a94b5","#5b4a7a"], figure:{hair:"short",beard:"long",mood:"bold"},
     related:[{"name":"다윗","reason":"물맷돌에 쓰러진 상대"}],
+    gender:"남",
     summary:"키가 약 3미터에 달했다고 전해지는 블레셋의 거인 장수로, 40일 동안 이스라엘 군대를 조롱하며 일대일 대결을 청했다. 소년 다윗이 던진 물맷돌에 이마를 맞고 쓰러졌다.",
     refs:"사무엘상 17장"},
   {name:"요나단", category:"왕정", icon:"🏹", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"warm"},
     related:[{"name":"사울","reason":"아버지"},{"name":"다윗","reason":"생명을 나눈 벗"}],
+    gender:"남",
     summary:"사울 왕의 아들이자 왕위 계승자였지만, 다윗과 '자기 생명을 사랑함같이' 우정을 나누며 아버지의 살해 계획에서 다윗을 여러 차례 구해주었다. 아버지와 함께 블레셋과의 전투에서 전사했다.",
     refs:"사무엘상"},
   {name:"솔로몬", category:"왕", icon:"👑", color:["#e0b04c","#8b5cf6"], figure:{hair:"short",beard:"short",mood:"wise"},
     related:[{"name":"다윗","reason":"아버지"}],
+    gender:"남",
     summary:"다윗과 밧세바 사이에서 태어난 아들로, 왕이 된 뒤 재물이 아닌 지혜를 구해 하나님을 기쁘게 했다. 두 여인의 아기를 놓고 지혜로운 재판을 했고, 예루살렘 성전을 건축했지만 말년에는 많은 이방 아내들로 인해 우상숭배로 기울었다.",
     refs:"열왕기상 1~11장"},
   {name:"엘리야", category:"선지자", icon:"🔥", color:["#f4a261","#e0577a"], figure:{hair:"long",beard:"long",mood:"bold"},
     related:[{"name":"엘리사","reason":"갑절의 영감을 이어받은 후계자"},{"name":"세례요한","reason":"'엘리야의 심령과 능력으로' 온 인물로 신약에서 연결됨"}],
+    gender:"남",
     summary:"갈멜산에서 바알 선지자 450명과 대결해 하늘에서 불이 내려오게 함으로 여호와가 참 신임을 증명했다. 그러나 이세벨의 위협에 광야로 도망쳐 죽고 싶다고 할 만큼 좌절하기도 했으며, 마지막에는 불수레와 불말을 타고 회오리바람 가운데 승천했다. 신약에서 예수가 변화산에서 모세와 함께 나타난 인물이 바로 엘리야이며, 세례요한은 '엘리야의 심령과 능력으로' 온 인물로 묘사된다.",
     refs:"열왕기상~열왕기하"},
   {name:"엘리사", category:"선지자", icon:"🌊", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"gentle"},
     related:[{"name":"엘리야","reason":"부름을 받고 따른 스승"}],
+    gender:"남",
     summary:"밭을 갈다가 엘리야의 부름을 받고 소를 잡아 잔치를 벌인 뒤 그를 따랐다. 엘리야가 승천할 때 갑절의 영감을 구해 받았고, 이후 많은 치유와 기적을 행한 선지자로 활동했다.",
     refs:"열왕기하"},
   {name:"이사야", category:"대선지자", icon:"📜", color:["#7fb3d5","#4a7fa5"], figure:{hair:"long",beard:"long",mood:"serious"},
+    gender:"남",
     summary:"유다 왕국에서 활동한 대선지자로, 성전에서 하나님의 영광을 보는 환상을 체험하고 '내가 여기 있나이다 나를 보내소서'라며 사명을 받아들였다. 처녀가 잉태해 아들을 낳으리라는 예언(7장)과 고난받는 종의 노래(53장) 등 메시아에 대한 예언을 여럿 남겼으며, 신약은 이를 예수의 탄생과 십자가 죽음의 성취로 인용한다.",
     refs:"이사야서"},
   {name:"예레미야", category:"대선지자", icon:"😢", color:["#7fb3d5","#4a7fa5"], figure:{hair:"long",beard:"long",mood:"sorrow"},
+    gender:"남",
     summary:"'눈물의 선지자'로 불리며, 예루살렘의 멸망을 예언했으나 사람들에게 배척당하고 웅덩이에 갇히는 고초까지 겪었다. 그럼에도 하나님이 새 언약을 맺으실 것이라는 소망의 메시지도 함께 전했다.",
     refs:"예레미야서"},
   {name:"에스겔", category:"대선지자", icon:"👁️", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"long",mood:"serious"},
+    gender:"남",
     summary:"바벨론 포로로 끌려간 제사장 출신 선지자로, 마른 뼈들이 살아나는 환상 등 강렬한 상징적 환상을 많이 본 것으로 알려져 있다.",
     refs:"에스겔서"},
   {name:"다니엘", category:"대선지자", icon:"🦁", color:["#9a94b5","#5b4a7a"], figure:{hair:"short",mood:"bold"},
+    gender:"남",
     summary:"바벨론 포로로 끌려가 궁정에서 교육받으면서도 왕의 음식을 거절하며 신앙의 절개를 지켰다. 왕의 꿈을 해석해 총리 자리에 올랐고, 기도를 금하는 조서에도 굴하지 않고 기도하다 사자굴에 던져졌지만 하나님이 지켜주셨다.",
     refs:"다니엘서"},
   {name:"요나", category:"소선지자", icon:"🐋", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"sorrow"},
+    gender:"남",
     summary:"니느웨로 가서 심판을 선포하라는 하나님의 명령을 피해 반대 방향인 다시스로 가는 배를 탔다가 풍랑을 만나 바다에 던져졌고, 큰 물고기 뱃속에서 사흘을 보낸 뒤 살아났다. 결국 니느웨로 가서 심판을 선포했지만 백성이 회개하고 살아나자 오히려 화를 냈다.",
     refs:"요나서"},
   {name:"욥", category:"지혜서", icon:"⛅", color:["#9a94b5","#5b4a7a"], figure:{hair:"long",beard:"long",mood:"sorrow"},
+    gender:"남",
     summary:"흠 없고 정직한 사람이었으나 하루아침에 재산과 자녀를 모두 잃고 온몸에 악창이 나는 고난을 당했다. 친구들의 위로 아닌 위로를 들으면서도 하나님을 원망하지 않았고, 끝내 하나님의 응답을 들은 뒤 이전보다 더 많은 복을 받았다.",
     refs:"욥기"},
   {name:"에스더", category:"포로·귀환", icon:"👑", color:["#ff9fc2","#c2559a"], figure:{hair:"veil",mood:"bold"},
     related:[{"name":"모르드개","reason":"자신을 딸처럼 키운 사촌 오빠"}],
+    gender:"여",
     summary:"고아로 자란 유대인 여성으로, 사촌 모르드개의 손에서 자라다가 페르시아 왕비로 뽑혔다. 유대 민족을 몰살하려는 하만의 음모를 알게 되자 '죽으면 죽으리이다'라는 각오로 목숨을 걸고 왕 앞에 나아가 자기 백성을 구했다.",
     refs:"에스더서"},
   {name:"모르드개", category:"포로·귀환", icon:"📯", color:["#e0b04c","#8b5cf6"], figure:{hair:"short",beard:"short",mood:"wise"},
     related:[{"name":"에스더","reason":"딸처럼 키운 사촌 동생"}],
+    gender:"남",
     summary:"에스더를 딸처럼 키운 사촌 오빠로, 왕을 암살하려는 음모를 미리 알려 목숨을 구한 공로가 있었다. 하만의 미움을 샀지만 결국 하만이 준비한 처형대에 오히려 하만이 달리게 되었고, 자신은 총리 자리에 올랐다.",
     refs:"에스더서"},
   {name:"느헤미야", category:"포로·귀환", icon:"🧱", color:["#c9a27e","#8b5cf6"], figure:{hair:"short",beard:"short",mood:"bold"},
+    gender:"남",
     summary:"페르시아 왕의 술 관원으로 있다가 예루살렘 성벽이 무너져 있다는 소식에 슬퍼하며 왕의 허락을 받아 귀환했다. 방해 세력의 위협 속에서도 백성들과 함께 무기를 들고 일하며 단 52일 만에 성벽을 재건했다.",
     refs:"느헤미야서"},
   {name:"에스라", category:"포로·귀환", icon:"📜", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"long",mood:"wise"},
+    gender:"남",
     summary:"바벨론에서 율법을 깊이 연구한 학자이자 제사장으로, 포로 귀환 후 백성들 앞에서 율법책을 낭독하며 신앙 개혁을 이끌었다.",
     refs:"에스라서"},
   {name:"마리아", category:"신약·예수 탄생", icon:"🕊️", color:["#a7c7e7","#5b7fa6"], figure:{hair:"veil",mood:"gentle"},
     related:[{"name":"요셉(예수의 아버지)","reason":"정혼자이자 남편"},{"name":"세례요한","reason":"누가복음에 친척으로 기록된 인물"}],
+    gender:"여",
     summary:"나사렛의 젊은 여인으로, 천사 가브리엘에게서 성령으로 잉태해 메시아를 낳으리라는 소식을 듣고 '말씀대로 내게 이루어지이다'라며 순종했다. 예수를 낳아 기르며 십자가 처형 현장까지 끝까지 곁을 지켰다.",
     refs:"마태복음, 누가복음"},
   {name:"요셉(예수의 아버지)", category:"신약·예수 탄생", icon:"🔨", color:["#c9a27e","#8b5cf6"], figure:{hair:"short",beard:"short",mood:"gentle"},
     related:[{"name":"마리아","reason":"아내"}],
+    gender:"남",
     summary:"목수 일을 하던 다윗의 후손으로, 정혼자 마리아가 잉태한 사실을 알고 조용히 파혼하려 했으나 꿈에 나타난 천사의 말을 듣고 그대로 마리아를 아내로 맞았다. 헤롯의 위협을 피해 가족을 이끌고 애굽으로 피신했다가 돌아와 나사렛에 정착했다.",
     refs:"마태복음, 누가복음"},
   {name:"세례요한", category:"신약·예수 탄생", icon:"🕊️", color:["#a7c7e7","#5b7fa6"], figure:{hair:"long",beard:"long",mood:"bold"},
     related:[{"name":"마리아","reason":"누가복음에 친척으로 기록됨"},{"name":"안드레","reason":"본래 그의 제자였다가 예수를 따르게 됨"}],
+    gender:"남",
     summary:"제사장 사가랴와 엘리사벳이 노년에 얻은 아들로, 예수의 친척이다. 광야에서 낙타털 옷을 입고 메뚜기와 석청을 먹으며 지냈고, 요단강에서 회개의 세례를 베풀며 예수의 길을 예비했다. 직접 예수에게 세례를 주었고, 훗날 헤롯을 비판하다 목이 베여 순교했다.",
     refs:"마태복음 3장, 누가복음 1장 외"},
   {name:"베드로", category:"제자·사도", icon:"🎣", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"warm"},
     related:[{"name":"안드레","reason":"자신을 예수께 데려온 동생"},{"name":"야고보(세베대의 아들)","reason":"변화산 등 중요한 순간을 함께한 동료 제자"},{"name":"요한","reason":"변화산 등 중요한 순간을 함께한 동료 제자"}],
+    gender:"남",
     summary:"갈릴리 호수의 어부였다가 예수의 부름을 받고 그물을 버려두고 따랐다. 예수를 '그리스도시요 살아계신 하나님의 아들'이라 고백했지만, 예수가 잡히던 밤에는 세 번이나 그를 모른다고 부인했다. 부활한 예수를 만난 뒤 회복되어 초대교회의 핵심 지도자가 되었다.",
     refs:"사복음서, 사도행전"},
   {name:"안드레", category:"제자·사도", icon:"🎣", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"warm"},
     related:[{"name":"베드로","reason":"자신이 예수께 데려온 형"},{"name":"세례요한","reason":"본래 그의 제자였음"}],
+    gender:"남",
     summary:"베드로의 형제로, 본래 세례요한의 제자였다가 예수를 만나 따랐다. 형 베드로를 예수께 데려온 인물이며, 오병이어 사건에서 물고기 두 마리와 떡 다섯 개를 가진 소년을 예수께 소개했다.",
     refs:"사복음서"},
   {name:"야고보(세베대의 아들)", category:"제자·사도", icon:"🎣", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"bold"},
     related:[{"name":"요한","reason":"동생"},{"name":"베드로","reason":"변화산 등을 함께한 동료 제자"}],
+    gender:"남",
     summary:"요한의 형제로, 베드로·요한과 함께 예수의 변화산 사건과 겟세마네 기도 같은 중요한 순간을 가장 가까이서 지켜본 제자 중 하나다. 헤롯 아그립바에 의해 열두 제자 중 처음으로 순교했다.",
     refs:"사복음서, 사도행전 12장"},
   {name:"요한", category:"제자·사도", icon:"🕊️", color:["#a7c7e7","#5b7fa6"], figure:{hair:"short",mood:"gentle"},
     related:[{"name":"야고보(세베대의 아들)","reason":"형"},{"name":"베드로","reason":"변화산 등을 함께한 동료 제자"},{"name":"마리아","reason":"십자가 아래서 부탁받아 자기 집에 모신 예수의 어머니"}],
+    gender:"남",
     summary:"야고보의 동생으로, '예수께서 사랑하시는 제자'로 불리며 최후의 만찬에서 예수의 품에 기대었다. 십자가 아래서 예수의 어머니 마리아를 부탁받아 자기 집에 모셨고, 훗날 요한복음과 요한계시록을 기록했다고 전해진다.",
     refs:"사복음서, 요한계시록"},
   {name:"도마", category:"제자·사도", icon:"❓", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"serious"},
+    gender:"남",
     summary:"부활한 예수가 처음 나타났을 때 그 자리에 없었기에 '내가 그 손의 못 자국을 보며 내 손가락을 그 못 자국에 넣어보지 않고는 믿지 못하겠다'며 의심했다. 일주일 뒤 예수가 다시 나타나 상처를 보여주자 '나의 주님이시요 나의 하나님이시니이다'라고 고백했다.",
     refs:"요한복음 20장"},
   {name:"마태", category:"제자·사도", icon:"📖", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"warm"},
+    gender:"남",
     summary:"세관에 앉아 세금을 걷던 세리였으나, 예수가 '나를 따르라' 하시자 곧바로 일어나 따랐다. 이후 자기 집에서 예수를 위한 큰 잔치를 열어 동료 세리와 죄인들을 초대했으며, 마태복음을 기록했다고 전해진다.",
     refs:"마태복음 9장 외"},
   {name:"막달라마리아", category:"신약·여성", icon:"🌹", color:["#ff9fc2","#c2559a"], figure:{hair:"long",mood:"warm"},
+    gender:"여",
     summary:"일곱 귀신에 들렸다가 예수께 고침받은 뒤 자기 소유로 예수와 제자들을 섬겼다. 십자가 처형과 장례를 끝까지 지켜보았고, 부활절 아침 빈 무덤을 처음 발견하고 부활하신 예수를 가장 먼저 만난 증인이 되었다.",
     refs:"누가복음 8장, 요한복음 20장"},
   {name:"마르다와나사로", category:"신약·여성", icon:"🏠", color:["#c9a27e","#8b5cf6"], figure:{hair:"veil",mood:"warm"},
+    gender:"기타",
     summary:"베다니에 살던 마르다·마리아·나사로 삼남매는 예수와 가까이 지내던 가족이었다. 나사로가 병들어 죽자 예수는 나흘 만에 무덤을 찾아 '나사로야 나오라' 외쳐 그를 다시 살려냈고, 이는 예수가 행한 가장 극적인 표적 중 하나로 꼽힌다.",
     refs:"요한복음 11장"},
   {name:"바울", category:"사도", icon:"✍️", color:["#9a94b5","#5b4a7a"], figure:{hair:"short",beard:"short",mood:"serious"},
     related:[{"name":"바나바","reason":"회심 직후 자신을 받아들여 소개해준 첫 동역자"},{"name":"디모데","reason":"아들처럼 아끼며 데리고 다닌 제자"},{"name":"누가","reason":"여러 선교 여행에 동행한 동역자"},{"name":"스데반","reason":"돌에 맞아 죽는 순교 현장을 지켜봄(당시 이름 사울)"}],
+    gender:"남",
     summary:"본래 이름은 사울로, 바리새인 중의 바리새인으로 그리스도인들을 핍박하던 인물이었다. 다메섹으로 가던 길에 부활한 예수를 만나 눈이 멀었다가 다시 보게 되는 극적인 회심을 겪은 뒤, 이방인을 위한 사도로 세 차례 선교 여행을 다니며 로마서·고린도전후서 등 신약의 여러 서신을 기록했다.",
     refs:"사도행전, 서신서"},
   {name:"바나바", category:"사도", icon:"🤝", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"warm"},
     related:[{"name":"바울","reason":"소개해 받아들이고 함께 다닌 동역자"}],
+    gender:"남",
     summary:"본명은 요셉이지만 '위로의 아들'이라는 뜻의 바나바로 불렸다. 회심 직후 다른 사도들이 경계하던 바울을 받아들여 소개해주었고, 바울의 첫 선교 여행 동역자가 되었다.",
     refs:"사도행전"},
   {name:"스데반", category:"초대교회", icon:"⭐", color:["#e0b04c","#8b5cf6"], figure:{hair:"short",mood:"joyful"},
     related:[{"name":"바울","reason":"자신이 순교하는 현장을 지켜본 인물(당시 이름 사울)"}],
+    gender:"남",
     summary:"초대교회에서 구제 일을 맡은 일곱 집사 중 한 사람으로, 지혜와 성령이 충만했다. 유대 공회 앞에서 담대히 설교하다 돌에 맞아 죽었는데, 그 얼굴이 천사의 얼굴 같았다고 전해지며, 죽어가면서도 자신을 죽이는 이들을 용서해 달라고 기도한 초대교회 최초의 순교자다.",
     refs:"사도행전 6~7장"},
   {name:"디모데", category:"사도의 제자", icon:"📖", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",mood:"gentle"},
     related:[{"name":"바울","reason":"아들처럼 아끼며 이끌어준 스승"}],
+    gender:"남",
     summary:"믿음이 좋은 어머니와 외할머니 아래서 어릴 때부터 성경을 배우며 자란 젊은 제자로, 바울이 아들처럼 아끼며 데리고 다녔다. 몸이 약했지만 여러 교회를 맡아 섬겼고, 바울이 보낸 디모데전후서의 수신자다.",
     refs:"사도행전, 디모데전후서"},
   {name:"누가", category:"사도의 제자", icon:"✍️", color:["#7fb3d5","#4a7fa5"], figure:{hair:"short",beard:"short",mood:"gentle"},
     related:[{"name":"바울","reason":"여러 선교 여행에 동행한 동역자"}],
+    gender:"남",
     summary:"의사 출신으로, 바울의 선교 여행에 여러 차례 동행한 동역자였다. 목격자들을 자세히 취재해 예수의 생애를 정리한 누가복음과, 초대교회의 확장 과정을 기록한 사도행전을 남겼다.",
     refs:"누가복음, 사도행전, 골로새서 4장"},
 ];
@@ -537,10 +591,33 @@ const BibleAPI = {
     const cacheKey = `${translation}:${bookIdx}:${chapter}`;
     if(this._chapterCache.has(cacheKey)) return this._chapterCache.get(cacheKey);
     const bookId = bookIdx+1; // bolls.life 는 창세기=1 ... 요한계시록=66 순서를 사용
-    const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
-    const data = await this._fetchJson(url);
-    if(!Array.isArray(data) || data.length===0) throw new Error(`빈 응답 — ${url}`);
+    const lsKey = "chapterBackup_" + cacheKey;
+    let data, usedBackup = false;
+    try{
+      const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
+      data = await this._fetchJson(url);
+      LS.set(lsKey, data); // 성공한 응답은 통신이 안 될 때를 대비해 기기에 그대로 저장해둔다
+    }catch(liveErr){
+      // 안전장치: ① 예전에 성공해서 기기에 저장해 둔 응답, ② 이 사이트와 함께 배포된
+      // 정적 백업(bible-backup/, GitHub Actions가 주기적으로 채워둠) 순서로 시도한다.
+      const lsCached = LS.get(lsKey, null);
+      if(lsCached){
+        data = lsCached; usedBackup = true;
+      } else {
+        try{
+          const backupUrl = `bible-backup/${encodeURIComponent(translation)}/${bookId}/${chapter}.json`;
+          const res = await fetch(backupUrl);
+          if(!res.ok) throw new Error(`백업도 없음 (HTTP ${res.status})`);
+          data = await res.json();
+          usedBackup = true;
+        }catch(backupErr){
+          throw liveErr; // 원인 파악이 되도록 원래(실시간 호출) 에러를 보여준다
+        }
+      }
+    }
+    if(!Array.isArray(data) || data.length===0) throw new Error(`빈 응답 — ${translation} ${bookId}:${chapter}`);
     const result = data.map(v => ({ verse: v.verse ?? v.pk ?? "", text: (v.text||"").replace(/<[^>]+>/g,"") }));
+    result._fromBackup = usedBackup;
     this._chapterCache.set(cacheKey, result);
     return result;
   },
@@ -902,6 +979,7 @@ async function renderToday(){
     const verses = await BibleAPI.getChapter(state.translation, entry.bookIdx, entry.chapter);
     currentChapterVerses = verses.map(v=>({...v, bookIdx:entry.bookIdx, book:entry.book, chapter:entry.chapter}));
     renderVerses();
+    if(verses._fromBackup) toast("실시간 서버에 연결이 안 돼 저장된 본문을 보여드려요");
     state.chapterVerseCounts[dateISO] = currentChapterVerses.length;
     LS.set("chapterVerseCounts", state.chapterVerseCounts);
   }catch(err){
@@ -1536,16 +1614,58 @@ function renderChosungFilter(wrap, items, getName, selectedChar, onSelect){
 
 /* ---------- 성경 인물 색인 ---------- */
 let peopleFilterChar = null;
+let peopleGenderFilter = "";
+let peopleCategoryFilter = null;
+
 function renderPeopleFilters(){
-  renderChosungFilter(document.getElementById("people-filter"), PEOPLE, p=>p.name, peopleFilterChar, c=>{
+  const base = PEOPLE.filter(p=> (!peopleGenderFilter || p.gender===peopleGenderFilter)
+    && (!peopleCategoryFilter || p.category===peopleCategoryFilter));
+  renderChosungFilter(document.getElementById("people-filter"), base, p=>p.name, peopleFilterChar, c=>{
     peopleFilterChar = c; renderPeopleFilters(); renderPeopleList();
   });
 }
+
+function renderPeopleCategoryFilter(){
+  const wrap = document.getElementById("people-category-filter");
+  const base = PEOPLE.filter(p=> (!peopleGenderFilter || p.gender===peopleGenderFilter)
+    && (!peopleFilterChar || chosung(p.name[0])===peopleFilterChar));
+  const cats = [...new Set(base.map(p=> p.category))].sort((a,b)=> a.localeCompare(b, "ko"));
+  wrap.innerHTML = "";
+  const allBtn = document.createElement("button");
+  allBtn.className = "chosung-btn" + (peopleCategoryFilter===null ? " active" : "");
+  allBtn.textContent = `전체 (${base.length})`;
+  allBtn.addEventListener("click", ()=>{
+    peopleCategoryFilter = null; renderPeopleCategoryFilter(); renderPeopleFilters(); renderPeopleList();
+  });
+  wrap.appendChild(allBtn);
+  cats.forEach(cat=>{
+    const count = base.filter(p=> p.category===cat).length;
+    const b = document.createElement("button");
+    b.className = "chosung-btn" + (peopleCategoryFilter===cat ? " active" : "");
+    b.textContent = `${cat} (${count})`;
+    b.addEventListener("click", ()=>{
+      peopleCategoryFilter = cat; renderPeopleCategoryFilter(); renderPeopleFilters(); renderPeopleList();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+document.querySelectorAll("#people-gender-seg .seg-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    peopleGenderFilter = btn.dataset.gender;
+    document.querySelectorAll("#people-gender-seg .seg-btn").forEach(b=> b.classList.toggle("active", b===btn));
+    renderPeopleCategoryFilter();
+    renderPeopleFilters();
+    renderPeopleList();
+  });
+});
 
 function renderPeopleList(){
   const q = document.getElementById("people-search").value.trim();
   const wrap = document.getElementById("people-list");
   let list = PEOPLE;
+  if(peopleGenderFilter) list = list.filter(p=> p.gender === peopleGenderFilter);
+  if(peopleCategoryFilter) list = list.filter(p=> p.category === peopleCategoryFilter);
   if(peopleFilterChar) list = list.filter(p=> chosung(p.name[0]) === peopleFilterChar);
   if(q) list = list.filter(p=> p.name.includes(q) || p.summary.includes(q) || p.category.includes(q));
   list = [...list].sort((a,b)=> a.name.localeCompare(b.name, "ko"));
@@ -1626,6 +1746,7 @@ function openPersonDetail(p){
 document.getElementById("person-close").addEventListener("click", ()=> personDialog.close());
 personDialog.addEventListener("click", (e)=>{ if(e.target === personDialog) personDialog.close(); });
 
+renderPeopleCategoryFilter();
 renderPeopleFilters();
 renderPeopleList();
 
