@@ -1688,48 +1688,109 @@ function emptySearchIllustrationSVG(){
   </svg>`;
 }
 
+/* 구약(창세기~말라기)은 0~38번, 신약(마태복음~요한계시록)은 39~65번 */
+function isOldTestament(bookIdx){ return bookIdx < 39; }
+
+let lastSearchResults = [];
+let lastSearchQuery = "";
+let searchTestamentFilter = ""; // "" | "OT" | "NT"
+let searchChosungFilter = null;
+
 async function doSearch(){
   const q = document.getElementById("search-input").value.trim();
   const wrap = document.getElementById("search-results");
-  if(!q){ wrap.innerHTML=""; return; }
+  const testamentSeg = document.getElementById("search-testament-seg");
+  const chosungWrap = document.getElementById("search-chosung-filter");
+  if(!q){
+    wrap.innerHTML=""; testamentSeg.style.display="none"; chosungWrap.innerHTML="";
+    return;
+  }
   wrap.innerHTML = '<div class="empty">검색 중…</div>';
+  testamentSeg.style.display = "none";
+  chosungWrap.innerHTML = "";
   try{
-    const results = await BibleAPI.search(state.translation, q);
-    if(results.length===0){
-      const suggestions = [...POPULAR_SEARCH_TERMS].sort(()=> Math.random()-0.5).slice(0,6);
-      wrap.innerHTML = `<div class="empty" style="text-align:center;">
-        <div style="margin-bottom:8px;">${emptySearchIllustrationSVG()}</div>
-        <div>"${escapeHtml(q)}"에 대한 검색 결과가 없습니다.</div>
-        <div class="muted" style="margin-top:6px;font-size:.88em;">대신 이런 단어는 어때요?</div>
-        <div class="row wrap" id="search-suggestions" style="justify-content:center;gap:6px;margin-top:10px;"></div>
-      </div>`;
-      const sugWrap = document.getElementById("search-suggestions");
-      suggestions.forEach(term=>{
-        const b = document.createElement("button");
-        b.className = "btn small ghost";
-        b.textContent = term;
-        b.addEventListener("click", ()=>{
-          document.getElementById("search-input").value = term;
-          doSearch();
-        });
-        sugWrap.appendChild(b);
-      });
+    lastSearchResults = await BibleAPI.search(state.translation, q);
+    lastSearchQuery = q;
+    searchTestamentFilter = ""; searchChosungFilter = null;
+    document.querySelectorAll("#search-testament-seg .seg-btn").forEach(b=> b.classList.toggle("active", b.dataset.testament===""));
+    if(lastSearchResults.length===0){
+      renderSearchResultsList();
       return;
     }
-    wrap.innerHTML = "";
-    results.slice(0,50).forEach(r=>{
-      const bookName = BOOKS[r.bookIdx] ? BOOKS[r.bookIdx][0] : `책${r.bookIdx+1}`;
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `<div class="passage-ref" style="font-size:1em;">${bookName} ${r.chapter}:${r.verse}</div>
-        <div style="margin-top:4px;">${escapeHtml(r.text)}</div>`;
-      wrap.appendChild(div);
-    });
+    testamentSeg.style.display = "flex";
+    renderSearchChosungFilter();
+    renderSearchResultsList();
   }catch(err){
     console.error(err);
     wrap.innerHTML = `<div class="empty">검색에 실패했습니다. 설정에서 번역본 코드를 확인해주세요.<br><span style="font-size:.85em;">${escapeHtml(err.message)}</span></div>`;
   }
 }
+
+function renderSearchChosungFilter(){
+  const wrap = document.getElementById("search-chosung-filter");
+  const base = lastSearchResults.filter(r=>
+    !searchTestamentFilter || (searchTestamentFilter==="OT") === isOldTestament(r.bookIdx));
+  renderChosungFilter(wrap, base, r=> BOOKS[r.bookIdx][0], searchChosungFilter, c=>{
+    searchChosungFilter = c; renderSearchChosungFilter(); renderSearchResultsList();
+  });
+}
+
+function renderSearchResultsList(){
+  const wrap = document.getElementById("search-results");
+  const q = lastSearchQuery;
+  if(lastSearchResults.length===0){
+    const suggestions = [...POPULAR_SEARCH_TERMS].sort(()=> Math.random()-0.5).slice(0,6);
+    wrap.innerHTML = `<div class="empty" style="text-align:center;">
+      <div style="margin-bottom:8px;">${emptySearchIllustrationSVG()}</div>
+      <div>"${escapeHtml(q)}"에 대한 검색 결과가 없습니다.</div>
+      <div class="muted" style="margin-top:6px;font-size:.88em;">대신 이런 단어는 어때요?</div>
+      <div class="row wrap" id="search-suggestions" style="justify-content:center;gap:6px;margin-top:10px;"></div>
+    </div>`;
+    const sugWrap = document.getElementById("search-suggestions");
+    suggestions.forEach(term=>{
+      const b = document.createElement("button");
+      b.className = "btn small ghost";
+      b.textContent = term;
+      b.addEventListener("click", ()=>{
+        document.getElementById("search-input").value = term;
+        doSearch();
+      });
+      sugWrap.appendChild(b);
+    });
+    return;
+  }
+  let results = lastSearchResults.filter(r=>
+    !searchTestamentFilter || (searchTestamentFilter==="OT") === isOldTestament(r.bookIdx));
+  if(searchChosungFilter) results = results.filter(r=> chosung(BOOKS[r.bookIdx][0][0]) === searchChosungFilter);
+  // 창세기~요한계시록 순서(책 번호 -> 장 -> 절)로 항상 정렬
+  results = [...results].sort((a,b)=> a.bookIdx-b.bookIdx || a.chapter-b.chapter || a.verse-b.verse);
+
+  wrap.innerHTML = `<div class="muted" style="margin:0 4px 10px;font-size:.85em;">검색 결과 ${results.length}건</div>`;
+  if(results.length===0){
+    wrap.innerHTML += '<div class="card"><div class="empty">필터 조건에 맞는 결과가 없습니다.</div></div>';
+    return;
+  }
+  const resultsWrap = document.createElement("div");
+  results.slice(0,50).forEach(r=>{
+    const bookName = BOOKS[r.bookIdx] ? BOOKS[r.bookIdx][0] : `책${r.bookIdx+1}`;
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `<div class="passage-ref" style="font-size:1em;">${bookName} ${r.chapter}:${r.verse}</div>
+      <div style="margin-top:4px;">${escapeHtml(r.text)}</div>`;
+    resultsWrap.appendChild(div);
+  });
+  wrap.appendChild(resultsWrap);
+}
+
+document.querySelectorAll("#search-testament-seg .seg-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    searchTestamentFilter = btn.dataset.testament;
+    document.querySelectorAll("#search-testament-seg .seg-btn").forEach(b=> b.classList.toggle("active", b===btn));
+    searchChosungFilter = null;
+    renderSearchChosungFilter();
+    renderSearchResultsList();
+  });
+});
 
 /* ---------- 검색 탭: 본문 검색 / 인물 / 장소 전환 ---------- */
 document.querySelectorAll("#search-mode-seg .seg-btn").forEach(btn=>{
@@ -1885,6 +1946,18 @@ function parseAllChapterRefs(refsStr){
       for(let c=from; c<=to; c++) chapters.push({bookIdx:curBookIdx, chapter:c, bookName:curBookName});
       return;
     }
+    // "사무엘상~열왕기상"처럼 장 없이 책~책 범위인 경우: 정확한 장은 특정할 수
+    // 없지만, 이야기가 시작되는 첫 책 1장이라도 보여주는 게 아무것도 안 보여
+    // 주는 것보다 낫다.
+    m = seg.match(/^([가-힣]+)\s*[~-]\s*([가-힣]+)$/);
+    if(m){
+      const bookIdx = BOOKS.findIndex(b=> b[0] === m[1]);
+      if(bookIdx !== -1){
+        curBookIdx = bookIdx; curBookName = m[1];
+        chapters.push({bookIdx, chapter:1, bookName:m[1], rangeNote:seg});
+        return;
+      }
+    }
     unparsed.push(seg);
   });
   return { chapters, unparsed };
@@ -1906,7 +1979,10 @@ async function renderVersePreview(containerId, refsStr){
   let html = `<div class="vp-title">본문 미리보기</div>`;
   results.forEach((r, i)=>{
     const c = chapters[i];
-    html += `<div style="font-weight:700;margin-top:${i?12:0}px;margin-bottom:4px;">${escapeHtml(c.bookName)} ${c.chapter}장</div>`;
+    const label = c.rangeNote
+      ? `${escapeHtml(c.bookName)} ${c.chapter}장 (${escapeHtml(c.rangeNote)}에 걸친 이야기의 시작 부분)`
+      : `${escapeHtml(c.bookName)} ${c.chapter}장`;
+    html += `<div style="font-weight:700;margin-top:${i?12:0}px;margin-bottom:4px;">${label}</div>`;
     html += r.status === "fulfilled"
       ? r.value.map(v => `<div class="vp-verse"><span class="vp-num">${v.verse}</span>${escapeHtml(v.text)}</div>`).join("")
       : `<div class="muted">본문을 불러오지 못했습니다.</div>`;
@@ -2001,6 +2077,10 @@ function openPlaceDetail(pl){
 }
 document.getElementById("place-close").addEventListener("click", ()=> placeDialog.close());
 placeDialog.addEventListener("click", (e)=>{ if(e.target === placeDialog) placeDialog.close(); });
+
+setText("places-criteria-note",
+  `성경에는 지명이 수백 곳 넘게 나오지만, 이 색인에는 그중 널리 알려졌거나 ` +
+  `주요 사건의 배경이 되는 장소만 ${PLACES.length}곳 골라 담았습니다.`);
 
 renderPlacesFilters();
 renderPlacesList();

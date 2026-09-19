@@ -276,6 +276,12 @@
           <input type="text" id="search-input" placeholder="검색어를 입력하세요 (예: 사랑)">
           <button class="btn" id="search-btn">검색</button>
         </div>
+        <div class="seg-toggle" id="search-testament-seg" style="margin-top:10px;display:none;">
+          <button class="seg-btn active" data-testament="" style="flex:1;">전체</button>
+          <button class="seg-btn" data-testament="OT" style="flex:1;">구약</button>
+          <button class="seg-btn" data-testament="NT" style="flex:1;">신약</button>
+        </div>
+        <div class="row wrap" id="search-chosung-filter" style="margin-top:8px;gap:6px;"></div>
       </div>
       <div id="search-results"></div>
     </div>
@@ -301,6 +307,7 @@
         <input type="text" id="places-search" placeholder="이름으로 검색 (예: 예루살렘)">
         <div class="row wrap" id="places-filter" style="margin-top:10px;gap:6px;"></div>
       </div>
+      <div class="muted" id="places-criteria-note" style="font-size:.82em;margin:2px 4px 12px;line-height:1.5;"></div>
       <div id="places-list"></div>
     </div>
   </section>
